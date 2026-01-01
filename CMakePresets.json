@@ -1,0 +1,22 @@
+{
+  "buildPresets": [
+    {
+      "configurePreset": "macos",
+      "jobs": 4,
+      "name": "macos"
+    }
+  ],
+  "configurePresets": [
+    {
+      "binaryDir": "${sourceDir}/build-macos",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "TRUSSC_DIR": "/Users/toru/Nextcloud/Make/TrussC/tc_v0.0.1/trussc"
+      },
+      "displayName": "macOS",
+      "generator": "Unix Makefiles",
+      "name": "macos"
+    }
+  ],
+  "version": 6
+}
