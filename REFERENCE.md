@@ -1,6 +1,6 @@
-# tcScript API Reference
+# TrussSketch API Reference
 
-Complete API reference for tcScript. All functions are directly mapped from TrussC.
+Complete API reference for TrussSketch. All functions are directly mapped from TrussC.
 
 ## Lifecycle
 
