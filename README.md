@@ -10,7 +10,7 @@ tcScriptEngine powers [tcScript](https://trussc.org/tcscript/), a browser-based 
 global hue = 0.0
 
 def setup() {
-    print("Hello from tcScript!")
+    logNotice("Hello from tcScript!")
 }
 
 def update() {
@@ -22,17 +22,17 @@ def draw() {
     clear(1.0)
 
     for (var i = 0; i < 8; ++i) {
-        var angle = TAU * i / 8.0 + getElapsedTime()
+        var angle = TAU * i / 8.0 + getElapsedTimef()
         var x = getWindowWidth() / 2.0 + cos(angle) * 120.0
         var y = getWindowHeight() / 2.0 + sin(angle) * 120.0
 
-        setColor(fmod(hue + i * 0.125, 1.0), 0.7, 0.9)
+        setColorHSB(fmod(hue + i * 0.125, 1.0) * TAU, 0.7, 0.9)
         drawCircle(x, y, 25.0)
     }
 }
 
 def mousePressed(x, y, button) {
-    print("Click at " + to_string(x) + ", " + to_string(y))
+    logNotice("Click at " + to_string(x) + ", " + to_string(y))
 }
 ```
 
@@ -63,6 +63,16 @@ Output files will be in `bin/`:
 - `tcScriptEngine.js`
 - `tcScriptEngine.wasm`
 
+### Deploy to R2
+
+After building, deploy both files to Cloudflare R2:
+
+```bash
+cd bin
+wrangler r2 object put trussc-wasm/tcscript/tcScriptEngine.wasm --file tcScriptEngine.wasm --remote
+wrangler r2 object put trussc-wasm/tcscript/tcScriptEngine.js --file tcScriptEngine.js --remote
+```
+
 ### Build for macOS (Development)
 
 ```bash
@@ -73,99 +83,9 @@ cmake --build .
 
 ## API Reference
 
-### Lifecycle Functions
+See [REFERENCE.md](REFERENCE.md) for the complete API documentation.
 
-```javascript
-def setup() { }      // Called once at start
-def update() { }     // Called every frame
-def draw() { }       // Called every frame after update
-```
-
-### Event Functions
-
-```javascript
-def mousePressed(x, y, button) { }
-def mouseReleased(x, y, button) { }
-def mouseMoved(x, y) { }
-def mouseDragged(x, y, button) { }
-def keyPressed(key) { }
-def keyReleased(key) { }
-def windowResized(width, height) { }
-```
-
-### Graphics
-
-```javascript
-clear(gray)
-clear(r, g, b)
-setColor(gray)
-setColor(r, g, b)
-setColor(r, g, b, a)
-
-drawRect(x, y, w, h)
-drawCircle(x, y, radius)
-drawEllipse(x, y, w, h)
-drawLine(x1, y1, x2, y2)
-drawTriangle(x1, y1, x2, y2, x3, y3)
-drawText(text, x, y)
-
-fill() / noFill()
-stroke() / noStroke()
-setStrokeWeight(weight)
-```
-
-### Transform
-
-```javascript
-translate(x, y)
-rotate(radians)
-rotateDeg(degrees)
-scale(s)
-scale(sx, sy)
-pushMatrix() / popMatrix()
-```
-
-### Input
-
-```javascript
-getMouseX()
-getMouseY()
-isMousePressed()
-```
-
-### Time
-
-```javascript
-getElapsedTime()   // Seconds since start
-getDeltaTime()     // Seconds since last frame
-getFrameRate()     // Current FPS
-getFrameCount()    // Total frames rendered
-```
-
-### Math
-
-```javascript
-random()              // 0.0 - 1.0
-random(max)           // 0.0 - max
-random(min, max)      // min - max
-noise(x)              // Perlin noise
-noise(x, y)
-noise(x, y, z)
-lerp(a, b, t)
-clamp(v, min, max)
-map(v, inMin, inMax, outMin, outMax)
-sin, cos, tan, abs, sqrt, pow, min, max, floor, ceil, fmod
-radians(deg), degrees(rad)
-```
-
-### Constants
-
-```javascript
-TAU          // 6.28318... (2 * PI)
-HALF_TAU     // 3.14159... (PI)
-QUARTER_TAU  // 1.57079... (PI / 2)
-PI           // 3.14159...
-```
+Online reference: [trussc.cc/tcscript/reference/](https://trussc.cc/tcscript/reference/)
 
 ## Architecture
 
@@ -178,9 +98,21 @@ tcScriptEngine/
 │   └── libs/
 │       └── chaiscript/    # ChaiScript headers
 ├── CMakeLists.txt
+├── REFERENCE.md           # Auto-generated API reference
 ├── ROADMAP.md             # Planned features
 └── README.md
 ```
+
+### API Documentation Generation
+
+`REFERENCE.md` is auto-generated from `tc_v0.0.1/docs/api-definition.yaml`:
+
+```bash
+cd ../tc_v0.0.1/docs/scripts
+node generate-docs.js
+```
+
+This also generates `tcscript-api.js` for the web playground's autocomplete and reference page.
 
 ## License
 
@@ -188,6 +120,7 @@ MIT License - see TrussC for details.
 
 ## Links
 
-- [tcScript Playground](https://trussc.org/tcscript/)
-- [TrussC Framework](https://github.com/TrussC-org/trussc)
+- [tcScript Playground](https://trussc.cc/tcscript/)
+- [tcScript API Reference](https://trussc.cc/tcscript/reference/)
+- [TrussC Framework](https://github.com/TrussC-org/TrussC)
 - [ChaiScript](https://chaiscript.com/)
