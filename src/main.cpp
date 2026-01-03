@@ -28,6 +28,18 @@ const char* getScriptError() {
     return "";
 }
 
+// Pause the main loop (for power saving when stopped)
+EMSCRIPTEN_KEEPALIVE
+void pauseEngine() {
+    emscripten_pause_main_loop();
+}
+
+// Resume the main loop
+EMSCRIPTEN_KEEPALIVE
+void resumeEngine() {
+    emscripten_resume_main_loop();
+}
+
 } // extern "C"
 #endif
 
