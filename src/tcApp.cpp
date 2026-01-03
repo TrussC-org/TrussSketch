@@ -10,6 +10,9 @@ void tcApp::setup() {
 }
 
 void tcApp::update() {
+    // Skip update when paused
+    if (paused_) return;
+
     // Check for pending code from JS
     if (hasPendingCode_) {
         loadScript(pendingCode_);
@@ -23,6 +26,9 @@ void tcApp::update() {
 }
 
 void tcApp::draw() {
+    // Skip draw when paused (keep last frame visible)
+    if (paused_) return;
+
     // Default background if no script
     if (!scriptLoaded_) {
         clear(0.12f);

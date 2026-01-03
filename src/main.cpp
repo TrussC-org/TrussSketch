@@ -28,16 +28,20 @@ const char* getScriptError() {
     return "";
 }
 
-// Pause the main loop (for power saving when stopped)
+// Pause the app (skip update/draw for power saving)
 EMSCRIPTEN_KEEPALIVE
 void pauseEngine() {
-    emscripten_pause_main_loop();
+    if (g_app) {
+        g_app->setPaused(true);
+    }
 }
 
-// Resume the main loop
+// Resume the app
 EMSCRIPTEN_KEEPALIVE
 void resumeEngine() {
-    emscripten_resume_main_loop();
+    if (g_app) {
+        g_app->setPaused(false);
+    }
 }
 
 } // extern "C"

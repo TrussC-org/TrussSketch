@@ -28,11 +28,16 @@ public:
     void loadScript(const string& code);
     string getLastError() const;
 
+    // Pause control (for power saving)
+    void setPaused(bool paused) { paused_ = paused; }
+    bool isPaused() const { return paused_; }
+
 private:
     unique_ptr<tcScriptHost> scriptHost_;
     string pendingCode_;
     bool hasPendingCode_ = false;
     bool scriptLoaded_ = false;
+    bool paused_ = false;
 };
 
 // Global pointer for Emscripten interop
