@@ -210,6 +210,7 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun(static_cast<Vec2 (Vec2::*)(const Vec2&, float) const>(&Vec2::lerp)), "lerp");
 
     // Operators
+    chai_->add(fun([](Vec2& a, const Vec2& b) -> Vec2& { a = b; return a; }), "=");
     chai_->add(fun([](const Vec2& a, const Vec2& b) { return a + b; }), "+");
     chai_->add(fun([](const Vec2& a, const Vec2& b) { return a - b; }), "-");
     chai_->add(fun([](const Vec2& v, float s) { return v * s; }), "*");
@@ -250,6 +251,7 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun(&Vec3::xy), "xy");
 
     // Operators
+    chai_->add(fun([](Vec3& a, const Vec3& b) -> Vec3& { a = b; return a; }), "=");
     chai_->add(fun([](const Vec3& a, const Vec3& b) { return a + b; }), "+");
     chai_->add(fun([](const Vec3& a, const Vec3& b) { return a - b; }), "-");
     chai_->add(fun([](const Vec3& v, float s) { return v * s; }), "*");
@@ -286,6 +288,7 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun(&Color::lerpRGB), "lerpRGB");
 
     // Operators
+    chai_->add(fun([](Color& a, const Color& b) -> Color& { a = b; return a; }), "=");
     chai_->add(fun([](const Color& a, const Color& b) { return a + b; }), "+");
     chai_->add(fun([](const Color& a, const Color& b) { return a - b; }), "-");
     chai_->add(fun([](const Color& c, float s) { return c * s; }), "*");

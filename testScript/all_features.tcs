@@ -1,0 +1,367 @@
+// TrussSketch All Features Test
+// Tests all available API functions
+
+global time = 0.0
+global testPhase = 0
+global testName = ""
+
+// Vec2/Vec3/Color test variables
+global testVec2 = Vec2(0, 0)
+global testVec3 = Vec3(0, 0, 0)
+global testColor = Color(1, 1, 1)
+
+def setup() {
+    logNotice("=== TrussSketch All Features Test ===")
+    logNotice("Window: " + to_string(getWindowWidth()) + "x" + to_string(getWindowHeight()))
+    logNotice("Press keys 1-9 to switch test phases")
+
+    // Test Vec2
+    testVec2 = Vec2(100, 200)
+    logNotice("Vec2 test: length=" + to_string(testVec2.length()))
+
+    // Test Vec3
+    testVec3 = Vec3(1, 2, 3)
+    logNotice("Vec3 test: length=" + to_string(testVec3.length()))
+
+    // Test Color
+    testColor = Color_fromHSB(0.5, 0.8, 0.9)
+    logNotice("Color test: r=" + to_string(testColor.r))
+}
+
+def update() {
+    time = time + getDeltaTime()
+}
+
+def draw() {
+    clear(0.1)
+
+    // Show current test info
+    setColor(1, 1, 1)
+    drawBitmapString("Test Phase: " + to_string(testPhase) + " - " + testName, 10, 20)
+    drawBitmapString("FPS: " + to_string(round(getFrameRate())), 10, 40)
+    drawBitmapString("Time: " + to_string(round(getElapsedTimef())), 10, 60)
+    drawBitmapString("Frame: " + to_string(getFrameCount()), 10, 80)
+
+    if (testPhase == 0) {
+        testName = "Basic Shapes"
+        testBasicShapes()
+    }
+    if (testPhase == 1) {
+        testName = "Colors"
+        testColors()
+    }
+    if (testPhase == 2) {
+        testName = "Transform"
+        testTransform()
+    }
+    if (testPhase == 3) {
+        testName = "Stroke/Fill"
+        testStrokeFill()
+    }
+    if (testPhase == 4) {
+        testName = "Math Functions"
+        testMath()
+    }
+    if (testPhase == 5) {
+        testName = "Vec2 Class"
+        testVec2Class()
+    }
+    if (testPhase == 6) {
+        testName = "Vec3 Class"
+        testVec3Class()
+    }
+    if (testPhase == 7) {
+        testName = "Color Class"
+        testColorClass()
+    }
+    if (testPhase == 8) {
+        testName = "Noise"
+        testNoise()
+    }
+    if (testPhase == 9) {
+        testName = "Mouse Input"
+        testMouseInput()
+    }
+}
+
+def testBasicShapes() {
+    var cx = getWindowWidth() / 2.0
+    var cy = getWindowHeight() / 2.0
+
+    setColor(1, 0.3, 0.3)
+    drawRect(cx - 150, cy - 50, 80, 80)
+
+    setColor(0.3, 1, 0.3)
+    drawCircle(cx, cy, 40)
+
+    setColor(0.3, 0.3, 1)
+    drawEllipse(cx + 100, cy, 60, 40)
+
+    setColor(1, 1, 0.3)
+    drawLine(cx - 200, cy + 100, cx + 200, cy + 100)
+
+    setColor(1, 0.3, 1)
+    drawTriangle(cx, cy - 120, cx - 50, cy - 70, cx + 50, cy - 70)
+}
+
+def testColors() {
+    var w = getWindowWidth() / 8.0
+    var h = 100.0
+    var y = getWindowHeight() / 2.0 - 50.0
+
+    // HSB rainbow
+    for (var i = 0; i < 8; ++i) {
+        setColorHSB(i / 8.0 * TAU, 0.8, 0.9)
+        drawRect(i * w, y, w - 2, h)
+    }
+
+    // OKLCH rainbow
+    for (var i = 0; i < 8; ++i) {
+        setColorOKLCH(0.7, 0.15, i / 8.0 * TAU)
+        drawRect(i * w, y + 120, w - 2, h)
+    }
+
+    setColor(1, 1, 1)
+    drawBitmapString("HSB", 10, y + 50)
+    drawBitmapString("OKLCH", 10, y + 170)
+}
+
+def testTransform() {
+    var cx = getWindowWidth() / 2.0
+    var cy = getWindowHeight() / 2.0
+
+    // Multiple rotating squares
+    for (var i = 0; i < 5; ++i) {
+        pushMatrix()
+        translate(cx, cy)
+        rotate(time + i * TAU / 5.0)
+        translate(80, 0)
+        scale(0.5 + i * 0.1)
+
+        setColorHSB(i / 5.0 * TAU, 0.7, 0.9)
+        drawRect(-25, -25, 50, 50)
+        popMatrix()
+    }
+}
+
+def testStrokeFill() {
+    var cx = getWindowWidth() / 2.0
+    var cy = getWindowHeight() / 2.0
+
+    // Fill only
+    fill()
+    noStroke()
+    setColor(0.8, 0.2, 0.2)
+    drawRect(cx - 180, cy - 40, 80, 80)
+
+    // Stroke only
+    noFill()
+    stroke()
+    setStrokeWeight(3)
+    setColor(0.2, 0.8, 0.2)
+    drawRect(cx - 40, cy - 40, 80, 80)
+
+    // Both
+    fill()
+    stroke()
+    setStrokeWeight(2)
+    setColor(0.2, 0.2, 0.8)
+    drawRect(cx + 100, cy - 40, 80, 80)
+
+    // Labels
+    setColor(1, 1, 1)
+    noStroke()
+    drawBitmapString("Fill", cx - 160, cy + 60)
+    drawBitmapString("Stroke", cx - 30, cy + 60)
+    drawBitmapString("Both", cx + 120, cy + 60)
+}
+
+def testMath() {
+    var cx = getWindowWidth() / 2.0
+    var cy = getWindowHeight() / 2.0
+
+    // Sin wave
+    setColor(0.3, 1, 0.3)
+    for (var i = 0; i < 200; ++i) {
+        var x = i * 3.0
+        var y = cy + sin(i * 0.1 + time * 2) * 50
+        drawCircle(x, y, 2)
+    }
+
+    // Cos wave
+    setColor(0.3, 0.3, 1)
+    for (var i = 0; i < 200; ++i) {
+        var x = i * 3.0
+        var y = cy + 100 + cos(i * 0.1 + time * 2) * 50
+        drawCircle(x, y, 2)
+    }
+
+    // Random / lerp / clamp demo
+    setColor(1, 1, 1)
+    var t = fmod(time, 1.0)
+    var lerpVal = lerp(100, 500, t)
+    var clampVal = clamp(lerpVal, 200, 400)
+    drawBitmapString("lerp: " + to_string(round(lerpVal)), 10, cy - 80)
+    drawBitmapString("clamp: " + to_string(round(clampVal)), 10, cy - 60)
+}
+
+def testVec2Class() {
+    var cx = getWindowWidth() / 2.0
+    var cy = getWindowHeight() / 2.0
+
+    // Create vectors
+    var v1 = Vec2(100, 0)
+    var v2 = Vec2_fromAngle(time, 80)
+
+    // Draw origin
+    setColor(0.5, 0.5, 0.5)
+    drawCircle(cx, cy, 5)
+
+    // Draw v1 (static)
+    setColor(1, 0.3, 0.3)
+    drawLine(cx, cy, cx + v1.x, cy + v1.y)
+    drawCircle(cx + v1.x, cy + v1.y, 8)
+
+    // Draw v2 (rotating)
+    setColor(0.3, 1, 0.3)
+    drawLine(cx, cy, cx + v2.x, cy + v2.y)
+    drawCircle(cx + v2.x, cy + v2.y, 8)
+
+    // Draw sum
+    var sum = v1 + v2
+    setColor(0.3, 0.3, 1)
+    drawLine(cx, cy, cx + sum.x, cy + sum.y)
+    drawCircle(cx + sum.x, cy + sum.y, 8)
+
+    // Info
+    setColor(1, 1, 1)
+    drawBitmapString("v1 (red): " + to_string(round(v1.x)) + ", " + to_string(round(v1.y)), 10, 120)
+    drawBitmapString("v2 (green): " + to_string(round(v2.x)) + ", " + to_string(round(v2.y)), 10, 140)
+    drawBitmapString("v1+v2 (blue): " + to_string(round(sum.x)) + ", " + to_string(round(sum.y)), 10, 160)
+    drawBitmapString("v2.length: " + to_string(round(v2.length())), 10, 180)
+    drawBitmapString("v1.dot(v2): " + to_string(round(v1.dot(v2))), 10, 200)
+}
+
+def testVec3Class() {
+    var cx = getWindowWidth() / 2.0
+    var cy = getWindowHeight() / 2.0
+
+    var v1 = Vec3(1, 0, 0)
+    var v2 = Vec3(0, 1, 0)
+    var cross = v1.cross(v2)
+
+    setColor(1, 1, 1)
+    drawBitmapString("Vec3 Test", cx - 50, cy - 60)
+    drawBitmapString("v1 = (1, 0, 0)", cx - 80, cy - 20)
+    drawBitmapString("v2 = (0, 1, 0)", cx - 80, cy)
+    drawBitmapString("v1.cross(v2) = (" + to_string(cross.x) + ", " + to_string(cross.y) + ", " + to_string(cross.z) + ")", cx - 80, cy + 40)
+    drawBitmapString("v1.dot(v2) = " + to_string(v1.dot(v2)), cx - 80, cy + 60)
+
+    var v3 = Vec3(3, 4, 0)
+    drawBitmapString("Vec3(3,4,0).length = " + to_string(v3.length()), cx - 80, cy + 100)
+}
+
+def testColorClass() {
+    var cx = getWindowWidth() / 2.0
+    var cy = getWindowHeight() / 2.0
+    var size = 80.0
+
+    // RGB Color
+    var c1 = Color(1, 0.3, 0.3)
+    setColor(c1)
+    drawRect(cx - 200, cy - 40, size, size)
+
+    // HSB Color
+    var c2 = Color_fromHSB(time * 0.5, 0.8, 0.9)
+    setColor(c2)
+    drawRect(cx - 80, cy - 40, size, size)
+
+    // OKLCH Color
+    var c3 = Color_fromOKLCH(0.7, 0.15, time)
+    setColor(c3)
+    drawRect(cx + 40, cy - 40, size, size)
+
+    // Color math
+    var c4 = c1 * 0.5
+    setColor(c4)
+    drawRect(cx + 160, cy - 40, size, size)
+
+    // Labels
+    setColor(1, 1, 1)
+    drawBitmapString("RGB", cx - 185, cy + 60)
+    drawBitmapString("HSB", cx - 60, cy + 60)
+    drawBitmapString("OKLCH", cx + 50, cy + 60)
+    drawBitmapString("c*0.5", cx + 175, cy + 60)
+}
+
+def testNoise() {
+    var w = getWindowWidth()
+    var h = getWindowHeight()
+    var cy = h / 2.0
+
+    // 1D noise
+    setColor(0.3, 1, 0.3)
+    for (var i = 0; i < w; i = i + 4) {
+        var n = noise(i * 0.01 + time)
+        var y = cy + (n - 0.5) * 200
+        drawCircle(i, y, 2)
+    }
+
+    // 2D noise grid
+    setColor(1, 1, 1)
+    for (var x = 0; x < 10; ++x) {
+        for (var y = 0; y < 10; ++y) {
+            var n = noise(x * 0.3 + time, y * 0.3)
+            var px = 100 + x * 20
+            var py = 150 + y * 20
+            var s = n * 15
+            drawCircle(px, py, s)
+        }
+    }
+
+    drawBitmapString("1D Noise (line)", 10, cy + 130)
+    drawBitmapString("2D Noise (grid)", 100, 140)
+}
+
+def testMouseInput() {
+    var mx = getMouseX()
+    var my = getMouseY()
+
+    // Mouse follower
+    setColor(1, 1, 1)
+    if (isMousePressed()) {
+        setColor(1, 0.3, 0.3)
+    }
+    drawCircle(mx, my, 20)
+
+    // Crosshair
+    setColor(0.5, 0.5, 0.5)
+    drawLine(mx - 30, my, mx + 30, my)
+    drawLine(mx, my - 30, mx, my + 30)
+
+    // Info
+    setColor(1, 1, 1)
+    drawBitmapString("Mouse: " + to_string(round(mx)) + ", " + to_string(round(my)), 10, 120)
+    drawBitmapString("Pressed: " + to_string(isMousePressed()), 10, 140)
+}
+
+def keyPressed(key) {
+    logNotice("Key pressed: " + to_string(key))
+
+    // Switch test phases with number keys (49='1', 57='9')
+    if (key >= 48 && key <= 57) {
+        testPhase = key - 48
+    }
+}
+
+def mousePressed(x, y, button) {
+    logNotice("Mouse pressed: " + to_string(x) + ", " + to_string(y) + " button=" + to_string(button))
+}
+
+def mouseMoved(x, y) {
+    // silent
+}
+
+def windowResized(width, height) {
+    logNotice("Window resized: " + to_string(width) + "x" + to_string(height))
+}
