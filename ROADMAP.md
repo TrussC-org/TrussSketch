@@ -2,57 +2,92 @@
 
 ## Currently Implemented
 
-### Graphics
-- `clear(gray)`, `clear(r, g, b)`, `clear(r, g, b, a)`
-- `setColor(gray)`, `setColor(r, g, b)`, `setColor(r, g, b, a)`
-- `drawRect(x, y, w, h)`
-- `drawCircle(x, y, r)`
-- `drawEllipse(x, y, w, h)`
-- `drawLine(x1, y1, x2, y2)`
-- `drawTriangle(x1, y1, x2, y2, x3, y3)`
-- `drawText(text, x, y)`
-- `fill()`, `noFill()`, `stroke()`, `noStroke()`, `setStrokeWeight(w)`
+See [REFERENCE.md](REFERENCE.md) for complete API documentation.
 
-### Transform
-- `translate(x, y)`, `translate(x, y, z)`
-- `rotate(rad)`, `rotateDeg(deg)`
-- `scale(s)`, `scale(sx, sy)`
-- `pushMatrix()`, `popMatrix()`
-
-### Window
-- `getWindowWidth()`, `getWindowHeight()`
-
-### Input
-- `getMouseX()`, `getMouseY()`, `isMousePressed()`
-
-### Time
-- `getElapsedTime()`, `getDeltaTime()`, `getFrameRate()`, `getFrameCount()`
-
-### Math
-- `random()`, `random(max)`, `random(min, max)`
-- `lerp(a, b, t)`, `clamp(v, min, max)`, `map(v, inMin, inMax, outMin, outMax)`
-- `noise(x)`, `noise(x, y)`, `noise(x, y, z)`
-- `sin`, `cos`, `tan`, `abs`, `sqrt`, `pow`, `min`, `max`, `floor`, `ceil`, `fmod`
-- `radians(deg)`, `degrees(rad)`
-
-### Constants
-- `TAU`, `HALF_TAU`, `QUARTER_TAU`, `PI`
-
-### Utility
-- `print(msg)`, `log(msg)`
+### Highlights
+- Graphics: clear, setColor, setColorHSB/OKLCH/OKLab, shapes, text
+- Transform: translate, rotate, scale, pushMatrix/popMatrix
+- Time: getDeltaTime, getElapsedTimef, getFrameRate, system time, date/time
+- Math: random, noise, lerp, clamp, map, trig, geometry (dist, distSquared)
+- Input: mouse position, mouse pressed state
+- Events: mousePressed, keyPressed, windowResized, etc.
 
 ---
 
 ## TODO
 
-### Priority 1: ChipSound (from chipSoundExample)
+### Priority 1: Class Bindings (Core Types)
+
+Add TrussC classes for richer scripting:
+
+```javascript
+// Vec2
+var v = Vec2(10, 20)
+v.x, v.y
+v.length()
+v.normalize()
+v.dot(other)
+v + other, v - other, v * scalar
+
+// Vec3
+var v = Vec3(10, 20, 30)
+v.x, v.y, v.z
+v.cross(other)
+
+// Color
+var c = Color(1.0, 0.5, 0.2)
+var c = Color.fromHSB(hue, sat, bri)
+c.r, c.g, c.b, c.a
+```
+
+### Priority 2: Path & StrokeMesh
+
+```javascript
+// Path (Polyline)
+var path = Path()
+path.addVertex(x, y)
+path.close()
+path.draw()
+
+// StrokeMesh (variable width strokes)
+var stroke = StrokeMesh()
+stroke.setWidth(3.0)
+stroke.setCapType("round")   // "butt", "round", "square"
+stroke.setJoinType("miter")  // "miter", "round", "bevel"
+stroke.addVertex(x, y)
+stroke.draw()
+```
+
+### Priority 3: Tween (Animation)
+
+```javascript
+var tween = Tween()
+tween.setup(0.0, 100.0, 1.0, "easeOutQuad")  // from, to, duration, easing
+tween.start()
+tween.getValue()
+tween.isRunning()
+```
+
+### Priority 4: VideoGrabber (Camera)
+
+WebRTC-based camera capture (already works in TrussC WASM).
+
+```javascript
+var camera = VideoGrabber()
+camera.setup(640, 480)
+camera.draw(x, y)
+camera.draw(x, y, w, h)
+camera.getWidth()
+camera.getHeight()
+```
+
+### Priority 5: ChipSound
 
 Add procedural sound generation for 8-bit style audio.
 
 ```javascript
-// Target API
 var sound = buildSound({
-    wave: "square",  // sin, square, triangle, sawtooth, noise, pinkNoise
+    wave: "square",  // sin, square, triangle, sawtooth, noise
     hz: 440.0,
     duration: 0.3,
     volume: 0.4,
@@ -63,55 +98,21 @@ var sound = buildSound({
 })
 sound.play()
 sound.stop()
-sound.setLoop(true)
-
-// Or simpler API
-playTone(hz, duration)
-playTone(hz, duration, wave)
 ```
 
-Required bindings:
-- `ChipSoundNote` struct
-- `ChipSoundBundle` for layered sounds
-- `Sound` class with `play()`, `stop()`, `setLoop()`
-- `Wave` enum constants
+### Priority 6: VideoPlayer
 
-### Priority 2: VideoPlayer (from videoPlayerWebExample)
-
-Add web video playback support.
+Web video playback support.
 
 ```javascript
-// Target API
 var video = loadVideo("https://example.com/video.mp4")
 video.play()
-video.stop()
-video.setPaused(true)
-video.setPosition(0.5)  // 0.0 - 1.0
-video.setVolume(0.8)    // 0.0 - 1.0
 video.draw(x, y, w, h)
-
-// Getters
-video.isLoaded()
-video.isPlaying()
-video.isPaused()
-video.getWidth()
-video.getHeight()
-video.getDuration()
 video.getPosition()
-video.getVolume()
-video.getCurrentFrame()
-video.getTotalFrames()
+video.setPosition(0.5)
 ```
 
-### Priority 3: More Graphics
-
-- `drawArc(x, y, r, startAngle, endAngle)`
-- `drawPolygon(points)` or `beginShape()` / `vertex()` / `endShape()`
-- `drawBezier(x1, y1, cx1, cy1, cx2, cy2, x2, y2)`
-- `setTextAlign(h, v)`
-- `pushStyle()`, `popStyle()`
-
-### Priority 4: Image/Texture
+### Priority 7: Image/Texture
 
 ```javascript
 var img = loadImage("https://example.com/image.png")
@@ -121,24 +122,12 @@ img.getWidth()
 img.getHeight()
 ```
 
-### Priority 5: Keyboard Input
+### Priority 8: More Graphics
 
-```javascript
-isKeyPressed()
-isKeyPressed(keyCode)
-getKeyCode()
-
-// Key constants
-KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN
-KEY_SPACE, KEY_ENTER, KEY_ESCAPE
-```
-
-### Priority 6: Additional Math
-
-- `atan2(y, x)`
-- `asin(x)`, `acos(x)`
-- `dist(x1, y1, x2, y2)`
-- `constrain(v, min, max)` (alias for clamp)
+- `drawArc(x, y, r, startAngle, endAngle)`
+- `beginShape()` / `vertex()` / `endShape()`
+- `drawBezier(x1, y1, cx1, cy1, cx2, cy2, x2, y2)`
+- `pushStyle()`, `popStyle()`
 
 ---
 
@@ -146,4 +135,5 @@ KEY_SPACE, KEY_ENTER, KEY_ESCAPE
 
 - All features should work in WASM/Web environment
 - ChaiScript requires exception handling (`-fexceptions` flag)
-- Complex types (Sound, VideoPlayer, Image) need careful memory management in ChaiScript
+- Complex types need careful memory management in ChaiScript
+- VideoGrabber uses WebRTC (requires HTTPS in production)
