@@ -1,6 +1,8 @@
-# TrussSketch API Reference
+# TrussC API Reference
 
-Complete API reference for TrussSketch. All functions are directly mapped from TrussC.
+Complete API reference. This document is auto-generated from `api-definition.yaml`.
+
+For the latest interactive reference, visit [trussc.org/reference](https://trussc.org/reference/).
 
 ## Lifecycle
 
@@ -191,6 +193,8 @@ beep(frequency)                  // Play a beep sound
 Vec2()                           // Create 2D vector
 Vec2(x, y)                       // Create 2D vector
 Vec2(v)                          // Create 2D vector
+set(x, y)                        // Set vector components
+set(v)                           // Set vector components
 Vec2_fromAngle(radians)          // Create Vec2 from angle
 Vec2_fromAngle(radians, length)  // Create Vec2 from angle
 ```
@@ -201,6 +205,8 @@ Vec2_fromAngle(radians, length)  // Create Vec2 from angle
 Vec3()                           // Create 3D vector
 Vec3(x, y, z)                    // Create 3D vector
 Vec3(v)                          // Create 3D vector
+set(x, y, z)                     // Set vector components
+set(v)                           // Set vector components
 ```
 
 ## Types - Color
@@ -209,12 +215,27 @@ Vec3(v)                          // Create 3D vector
 Color()                          // Create color (0.0-1.0)
 Color(r, g, b)                   // Create color (0.0-1.0)
 Color(r, g, b, a)                // Create color (0.0-1.0)
+set(r, g, b)                     // Set color components
+set(r, g, b, a)                  // Set color components
+set(gray)                        // Set color components
+set(c)                           // Set color components
 Color_fromHSB(h, s, b)           // Create Color from HSB
 Color_fromHSB(h, s, b, a)        // Create Color from HSB
 Color_fromOKLCH(L, C, H)         // Create Color from OKLCH
 Color_fromOKLCH(L, C, H, a)      // Create Color from OKLCH
 Color_fromOKLab(L, a, b)         // Create Color from OKLab
 Color_fromOKLab(L, a, b, alpha)  // Create Color from OKLab
+```
+
+## Types - Rect
+
+```javascript
+Rect()                           // Create a rectangle
+Rect(x, y, w, h)                 // Create a rectangle
+set(x, y, w, h)                  // Set rectangle properties
+set(pos, w, h)                   // Set rectangle properties
+contains(x, y)                   // Check if point is inside
+intersects(other)                // Check intersection
 ```
 
 ## Graphics - Advanced

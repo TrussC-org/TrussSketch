@@ -198,6 +198,8 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun(&Vec2::y), "y");
 
     // Methods
+    chai_->add(fun(static_cast<Vec2& (Vec2::*)(float, float)>(&Vec2::set)), "set");
+    chai_->add(fun(static_cast<Vec2& (Vec2::*)(const Vec2&)>(&Vec2::set)), "set");
     chai_->add(fun(&Vec2::length), "length");
     chai_->add(fun(&Vec2::lengthSquared), "lengthSquared");
     chai_->add(fun(&Vec2::normalized), "normalized");
@@ -242,6 +244,8 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun(&Vec3::z), "z");
 
     // Methods
+    chai_->add(fun(static_cast<Vec3& (Vec3::*)(float, float, float)>(&Vec3::set)), "set");
+    chai_->add(fun(static_cast<Vec3& (Vec3::*)(const Vec3&)>(&Vec3::set)), "set");
     chai_->add(fun(&Vec3::length), "length");
     chai_->add(fun(&Vec3::lengthSquared), "lengthSquared");
     chai_->add(fun(&Vec3::normalized), "normalized");
@@ -278,7 +282,14 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun(&Color::b), "b");
     chai_->add(fun(&Color::a), "a");
 
-    // Static factory methods
+    // Methods
+    chai_->add(fun([](Color& c, float r, float g, float b) -> Color& { return c.set(r, g, b); }), "set");
+    chai_->add(fun(static_cast<Color& (Color::*)(float, float, float, float)>(&Color::set)), "set");
+    chai_->add(fun([](Color& c, float gray) -> Color& { return c.set(gray); }), "set");
+    chai_->add(fun(static_cast<Color& (Color::*)(float, float)>(&Color::set)), "set");
+    chai_->add(fun(static_cast<Color& (Color::*)(const Color&)>(&Color::set)), "set");
+
+    chai_->add(fun(&Color::clamped), "clamped");
     chai_->add(fun([](float h, float s, float b) { return Color::fromHSB(h, s, b); }), "Color_fromHSB");
     chai_->add(fun([](float h, float s, float b, float a) { return Color::fromHSB(h, s, b, a); }), "Color_fromHSB");
     chai_->add(fun([](float L, float C, float H) { return Color::fromOKLCH(L, C, H); }), "Color_fromOKLCH");
@@ -299,6 +310,31 @@ void tcScriptHost::bindTrussCFunctions() {
 
     // setColor with Color object
     chai_->add(fun([](const Color& c) { setColor(c.r, c.g, c.b, c.a); }), "setColor");
+
+    // ==========================================================================
+    // Class Bindings - Rect
+    // ==========================================================================
+    chai_->add(user_type<Rect>(), "Rect");
+
+    // Constructors
+    chai_->add(constructor<Rect()>(), "Rect");
+    chai_->add(constructor<Rect(float, float, float, float)>(), "Rect");
+
+    // Member variables
+    chai_->add(fun(&Rect::x), "x");
+    chai_->add(fun(&Rect::y), "y");
+    chai_->add(fun(&Rect::width), "width");
+    chai_->add(fun(&Rect::height), "height");
+
+    // Methods
+    chai_->add(fun(static_cast<Rect& (Rect::*)(float, float, float, float)>(&Rect::set)), "set");
+    chai_->add(fun(static_cast<Rect& (Rect::*)(const Vec2&, float, float)>(&Rect::set)), "set");
+    chai_->add(fun(&Rect::contains), "contains");
+    chai_->add(fun(&Rect::intersects), "intersects");
+    chai_->add(fun(&Rect::getRight), "getRight");
+    chai_->add(fun(&Rect::getBottom), "getBottom");
+    chai_->add(fun(&Rect::getCenterX), "getCenterX");
+    chai_->add(fun(&Rect::getCenterY), "getCenterY");
 
     // ==========================================================================
     // Class Bindings - Mesh
