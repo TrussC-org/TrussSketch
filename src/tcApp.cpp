@@ -1,11 +1,34 @@
 #include "tcApp.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 // Global pointer for Emscripten interop
 tcApp* g_app = nullptr;
 
+// Helper to log errors to JS console (works in Emscripten)
+static void logToJSConsole(const string& msg) {
+#ifdef __EMSCRIPTEN__
+    EM_ASM({
+        console.error("TrussSketch: " + UTF8ToString($0));
+    }, msg.c_str());
+#endif
+    logError("tcApp") << msg;
+}
+
 void tcApp::setup() {
     g_app = this;
-    scriptHost_ = make_unique<tcScriptHost>();
+    try {
+        scriptHost_ = make_unique<tcScriptHost>();
+        // Success - no need to log
+    } catch (const std::exception& e) {
+        initError_ = string("Fatal error: ") + e.what();
+        logToJSConsole(initError_);
+    } catch (...) {
+        initError_ = "Unknown fatal error in script host init";
+        logToJSConsole(initError_);
+    }
     // No default script - wait for JS to send code
 }
 
@@ -28,6 +51,16 @@ void tcApp::update() {
 void tcApp::draw() {
     // Skip draw when paused (keep last frame visible)
     if (paused_) return;
+
+    // Show initialization error if any
+    if (!initError_.empty()) {
+        clear(0.2f, 0.1f, 0.1f);
+        setColor(1.0f, 0.3f, 0.3f);
+        drawBitmapString("ChaiScript Init Error:", 20, 30);
+        setColor(1.0f, 1.0f, 1.0f);
+        drawBitmapString(initError_, 20, 50);
+        return;
+    }
 
     // Default background if no script
     if (!scriptLoaded_) {

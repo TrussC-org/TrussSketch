@@ -34,17 +34,26 @@ void tcScriptHost::bindTrussCFunctions() {
 
     // Basic shapes
     chai_->add(fun([](float x, float y, float w, float h) { drawRect(x, y, w, h); }), "drawRect");
+    chai_->add(fun([](const Vec3& pos, float w, float h) { drawRect(pos, w, h); }), "drawRect");
+    chai_->add(fun([](const Vec3& pos, const Vec2& size) { drawRect(pos, size); }), "drawRect");
     chai_->add(fun([](float x, float y, float r) { drawCircle(x, y, r); }), "drawCircle");
+    chai_->add(fun([](const Vec3& center, float r) { drawCircle(center, r); }), "drawCircle");
     chai_->add(fun([](float x, float y, float w, float h) { drawEllipse(x, y, w, h); }), "drawEllipse");
+    chai_->add(fun([](const Vec3& center, float rx, float ry) { drawEllipse(center, rx, ry); }), "drawEllipse");
+    chai_->add(fun([](const Vec3& center, const Vec2& radii) { drawEllipse(center, radii); }), "drawEllipse");
     chai_->add(fun([](float x1, float y1, float x2, float y2) { drawLine(x1, y1, x2, y2); }), "drawLine");
+    chai_->add(fun([](const Vec3& p1, const Vec3& p2) { drawLine(p1, p2); }), "drawLine");
     chai_->add(fun([](float x1, float y1, float x2, float y2, float x3, float y3) {
         drawTriangle(x1, y1, x2, y2, x3, y3);
     }), "drawTriangle");
+    chai_->add(fun([](const Vec3& p1, const Vec3& p2, const Vec3& p3) { drawTriangle(p1, p2, p3); }), "drawTriangle");
 
     // Shape construction
     chai_->add(fun([]() { beginShape(); }), "beginShape");
     chai_->add(fun([](float x, float y) { vertex(x, y); }), "vertex");
     chai_->add(fun([](float x, float y, float z) { vertex(x, y, z); }), "vertex");
+    chai_->add(fun([](const Vec2& v) { vertex(v); }), "vertex");
+    chai_->add(fun([](const Vec3& v) { vertex(v); }), "vertex");
     chai_->add(fun([]() { endShape(); }), "endShape");
     chai_->add(fun([](bool close) { endShape(close); }), "endShape");
 
@@ -126,6 +135,10 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun([](float max) { return random(0.0f, max); }), "random");
     chai_->add(fun([]() { return random(0.0f, 1.0f); }), "random");
 
+    chai_->add(fun([](int max) { return randomInt(max); }), "randomInt");
+    chai_->add(fun([](int min, int max) { return randomInt(min, max); }), "randomInt");
+    chai_->add(fun([](unsigned int seed) { randomSeed(seed); }), "randomSeed");
+
     chai_->add(fun([](float a, float b, float t) { return tc::lerp(a, b, t); }), "lerp");
     chai_->add(fun([](float v, float min, float max) { return tc::clamp(v, min, max); }), "clamp");
     chai_->add(fun([](float v, float inMin, float inMax, float outMin, float outMax) {
@@ -135,6 +148,16 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun([](float x) { return noise(x); }), "noise");
     chai_->add(fun([](float x, float y) { return noise(x, y); }), "noise");
     chai_->add(fun([](float x, float y, float z) { return noise(x, y, z); }), "noise");
+
+    chai_->add(fun([](float x) { return signedNoise(x); }), "signedNoise");
+    chai_->add(fun([](float x, float y) { return signedNoise(x, y); }), "signedNoise");
+    chai_->add(fun([](float x, float y, float z) { return signedNoise(x, y, z); }), "signedNoise");
+    chai_->add(fun([](float x, float y, float z, float w) { return signedNoise(x, y, z, w); }), "signedNoise");
+
+    chai_->add(fun([](float x, float y) { return fbm(x, y); }), "fbm");
+    chai_->add(fun([](float x, float y, int octaves) { return fbm(x, y, octaves); }), "fbm");
+    chai_->add(fun([](float x, float y, float z) { return fbm(x, y, z); }), "fbm");
+    chai_->add(fun([](float x, float y, float z, int octaves) { return fbm(x, y, z, octaves); }), "fbm");
 
     chai_->add(fun([](float deg) -> float { return deg2rad(deg); }), "deg2rad");
     chai_->add(fun([](float rad) -> float { return rad2deg(rad); }), "rad2deg");
@@ -190,6 +213,10 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun([]() { beep(); }), "beep");
     chai_->add(fun([](float f) { beep(f); }), "beep");
 
+    chai_->add(fun([](int v) { return to_string(v); }), "to_string");
+    chai_->add(fun([](float v) { return to_string(v); }), "to_string");
+    chai_->add(fun([](double v) { return to_string(v); }), "to_string");
+
     // ==========================================================================
     // Class Bindings - Vec2
     // ==========================================================================
@@ -205,8 +232,8 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun(&Vec2::y), "y");
 
     // Methods
-    chai_->add(fun(static_cast<Vec2& (Vec2::*)(float, float)>(&Vec2::set)), "set");
-    chai_->add(fun(static_cast<Vec2& (Vec2::*)(const Vec2&)>(&Vec2::set)), "set");
+    chai_->add(fun([](Vec2& v, float x, float y) -> Vec2& { return v.set(x, y); }), "set");
+    chai_->add(fun([](Vec2& v, const Vec2& other) -> Vec2& { return v.set(other); }), "set");
     chai_->add(fun(&Vec2::length), "length");
     chai_->add(fun(&Vec2::lengthSquared), "lengthSquared");
     chai_->add(fun(&Vec2::normalized), "normalized");
@@ -305,7 +332,6 @@ void tcScriptHost::bindTrussCFunctions() {
     chai_->add(fun([](float L, float a_lab, float b_lab, float alpha) { return Color::fromOKLab(L, a_lab, b_lab, alpha); }), "Color_fromOKLab");
 
     // Methods
-    chai_->add(fun(&Color::clamped), "clamped");
     chai_->add(fun(&Color::lerpRGB), "lerpRGB");
 
     // Operators
