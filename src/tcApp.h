@@ -35,7 +35,7 @@ public:
 private:
     unique_ptr<tcScriptHost> scriptHost_;
     string pendingCode_;
-    string initError_;  // Error during ChaiScript initialization
+    string initError_;  // Error during script engine initialization
     bool hasPendingCode_ = false;
     bool scriptLoaded_ = false;
     bool paused_ = false;

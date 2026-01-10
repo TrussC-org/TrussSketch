@@ -10,10 +10,38 @@ include(${TRUSSC_DIR}/cmake/trussc_app.cmake)
 
 trussc_app()
 
-# ChaiScript requires exceptions
+# ============================================================================
+# AngelScript
+# ============================================================================
+include(FetchContent)
+
+FetchContent_Declare(
+    angelscript
+    GIT_REPOSITORY https://github.com/anjo76/angelscript.git
+    GIT_TAG        master
+    GIT_SHALLOW    TRUE
+)
+
+FetchContent_MakeAvailable(angelscript)
+
+# AngelScript CMake is in sdk/angelscript/projects/cmake
+add_subdirectory(${angelscript_SOURCE_DIR}/sdk/angelscript/projects/cmake angelscript_build)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${angelscript_SOURCE_DIR}/sdk/angelscript/include
+    ${angelscript_SOURCE_DIR}/sdk/add_on
+)
+target_link_libraries(${PROJECT_NAME} PRIVATE angelscript)
+
+# Add AngelScript add-ons (scriptstdstring for std::string support)
+target_sources(${PROJECT_NAME} PRIVATE
+    ${angelscript_SOURCE_DIR}/sdk/add_on/scriptstdstring/scriptstdstring.cpp
+)
+
+# ============================================================================
+# Emscripten settings
+# ============================================================================
 if(EMSCRIPTEN)
-    target_compile_options(${PROJECT_NAME} PRIVATE -fexceptions)
-    target_link_options(${PROJECT_NAME} PRIVATE -fexceptions)
     # Export functions for JS interop
     target_link_options(${PROJECT_NAME} PRIVATE
         -sEXPORTED_FUNCTIONS=['_main','_updateScriptCode','_getScriptError']

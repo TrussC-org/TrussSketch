@@ -3,7 +3,7 @@
 #include <TrussC.h>
 #include <string>
 #include <functional>
-#include "libs/chaiscript/chaiscript/chaiscript.hpp"
+#include <angelscript.h>
 
 using namespace std;
 using namespace tc;
@@ -34,23 +34,23 @@ public:
     void callWindowResized(int width, int height);
 
 private:
-    void bindTrussCFunctions();
+    void registerTrussCFunctions();
+    void messageCallback(const asSMessageInfo* msg);
 
-    template<typename Func>
-    void tryCall(const string& funcName, Func&& func);
-
-    unique_ptr<chaiscript::ChaiScript> chai_;
+    asIScriptEngine* engine_ = nullptr;
+    asIScriptModule* module_ = nullptr;
+    asIScriptContext* ctx_ = nullptr;
     string lastError_;
 
-    // Cached function existence flags
-    bool hasSetup_ = false;
-    bool hasUpdate_ = false;
-    bool hasDraw_ = false;
-    bool hasMousePressed_ = false;
-    bool hasMouseReleased_ = false;
-    bool hasMouseMoved_ = false;
-    bool hasMouseDragged_ = false;
-    bool hasKeyPressed_ = false;
-    bool hasKeyReleased_ = false;
-    bool hasWindowResized_ = false;
+    // Cached function pointers
+    asIScriptFunction* setupFunc_ = nullptr;
+    asIScriptFunction* updateFunc_ = nullptr;
+    asIScriptFunction* drawFunc_ = nullptr;
+    asIScriptFunction* mousePressedFunc_ = nullptr;
+    asIScriptFunction* mouseReleasedFunc_ = nullptr;
+    asIScriptFunction* mouseMovedFunc_ = nullptr;
+    asIScriptFunction* mouseDraggedFunc_ = nullptr;
+    asIScriptFunction* keyPressedFunc_ = nullptr;
+    asIScriptFunction* keyReleasedFunc_ = nullptr;
+    asIScriptFunction* windowResizedFunc_ = nullptr;
 };

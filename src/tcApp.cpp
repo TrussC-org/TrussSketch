@@ -56,7 +56,7 @@ void tcApp::draw() {
     if (!initError_.empty()) {
         clear(0.2f, 0.1f, 0.1f);
         setColor(1.0f, 0.3f, 0.3f);
-        drawBitmapString("ChaiScript Init Error:", 20, 30);
+        drawBitmapString("Script Engine Error:", 20, 30);
         setColor(1.0f, 1.0f, 1.0f);
         drawBitmapString(initError_, 20, 50);
         return;
