@@ -1268,6 +1268,79 @@ bool tcScriptHost::loadScript(const string& code) {
     return true;
 }
 
+// =============================================================================
+// Multi-file support
+// =============================================================================
+
+void tcScriptHost::clearScriptFiles() {
+    scriptFiles_.clear();
+}
+
+void tcScriptHost::addScriptFile(const string& name, const string& code) {
+    scriptFiles_.push_back({name, code});
+}
+
+bool tcScriptHost::buildScriptFiles() {
+    lastError_.clear();
+
+    // Clean up resources from previous script
+    clearScriptResources();
+
+    if (module_) {
+        module_->Discard();
+        module_ = nullptr;
+    }
+
+    setupFunc_ = nullptr;
+    updateFunc_ = nullptr;
+    drawFunc_ = nullptr;
+    mousePressedFunc_ = nullptr;
+    mouseReleasedFunc_ = nullptr;
+    mouseMovedFunc_ = nullptr;
+    mouseDraggedFunc_ = nullptr;
+    keyPressedFunc_ = nullptr;
+    keyReleasedFunc_ = nullptr;
+    windowResizedFunc_ = nullptr;
+
+    module_ = engine_->GetModule("script", asGM_ALWAYS_CREATE);
+    if (!module_) {
+        lastError_ = "Failed to create script module";
+        return false;
+    }
+
+    // Add each file as a section
+    for (const auto& [name, code] : scriptFiles_) {
+        int r = module_->AddScriptSection(name.c_str(), code.c_str(), code.length());
+        if (r < 0) {
+            lastError_ = "Failed to add script section: " + name;
+            return false;
+        }
+    }
+
+    int r = module_->Build();
+    if (r < 0) {
+        // Error already captured by message callback
+        if (lastError_.empty()) {
+            lastError_ = "Script compilation failed";
+        }
+        return false;
+    }
+
+    // Bind lifecycle functions
+    setupFunc_ = module_->GetFunctionByDecl("void setup()");
+    updateFunc_ = module_->GetFunctionByDecl("void update()");
+    drawFunc_ = module_->GetFunctionByDecl("void draw()");
+    mousePressedFunc_ = module_->GetFunctionByDecl("void mousePressed(float, float, int)");
+    mouseReleasedFunc_ = module_->GetFunctionByDecl("void mouseReleased(float, float, int)");
+    mouseMovedFunc_ = module_->GetFunctionByDecl("void mouseMoved(float, float)");
+    mouseDraggedFunc_ = module_->GetFunctionByDecl("void mouseDragged(float, float, int)");
+    keyPressedFunc_ = module_->GetFunctionByDecl("void keyPressed(int)");
+    keyReleasedFunc_ = module_->GetFunctionByDecl("void keyReleased(int)");
+    windowResizedFunc_ = module_->GetFunctionByDecl("void windowResized(int, int)");
+
+    return true;
+}
+
 void tcScriptHost::callSetup() {
     if (!setupFunc_ || !ctx_) return;
     ctx_->Prepare(setupFunc_);

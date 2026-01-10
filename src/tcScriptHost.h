@@ -3,6 +3,7 @@
 #include <TrussC.h>
 #include <string>
 #include <functional>
+#include <vector>
 #include <angelscript.h>
 
 using namespace std;
@@ -13,8 +14,13 @@ public:
     tcScriptHost();
     ~tcScriptHost();
 
-    // Load and execute script code
+    // Load and execute script code (single file mode)
     bool loadScript(const string& code);
+
+    // Multi-file support
+    void clearScriptFiles();
+    void addScriptFile(const string& name, const string& code);
+    bool buildScriptFiles();
 
     // Get last error message
     string getLastError() const { return lastError_; }
@@ -41,6 +47,9 @@ private:
     asIScriptModule* module_ = nullptr;
     asIScriptContext* ctx_ = nullptr;
     string lastError_;
+
+    // Multi-file storage (preserves order)
+    vector<pair<string, string>> scriptFiles_;
 
     // Cached function pointers
     asIScriptFunction* setupFunc_ = nullptr;

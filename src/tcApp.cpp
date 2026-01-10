@@ -91,6 +91,32 @@ string tcApp::getLastError() const {
     return scriptHost_ ? scriptHost_->getLastError() : "";
 }
 
+void tcApp::clearScriptFiles() {
+    if (scriptHost_) {
+        scriptHost_->clearScriptFiles();
+    }
+}
+
+void tcApp::addScriptFile(const string& name, const string& code) {
+    if (scriptHost_) {
+        scriptHost_->addScriptFile(name, code);
+    }
+}
+
+bool tcApp::buildScriptFiles() {
+    if (scriptHost_) {
+        scriptLoaded_ = scriptHost_->buildScriptFiles();
+        if (scriptLoaded_) {
+            scriptHost_->callSetup();
+            logNotice("tcApp") << "Script built successfully (multi-file)";
+        } else {
+            logError("tcApp") << "Failed to build script: " << scriptHost_->getLastError();
+        }
+        return scriptLoaded_;
+    }
+    return false;
+}
+
 void tcApp::keyPressed(int key) {
     if (scriptHost_ && scriptLoaded_) {
         scriptHost_->callKeyPressed(key);

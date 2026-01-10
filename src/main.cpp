@@ -9,12 +9,42 @@
 
 extern "C" {
 
-// Called from JavaScript to update the script code
+// Called from JavaScript to update the script code (single-file mode)
 EMSCRIPTEN_KEEPALIVE
 void updateScriptCode(const char* code) {
     if (g_app && code) {
         g_app->loadScript(string(code));
     }
+}
+
+// Multi-file support: Clear all script files
+EMSCRIPTEN_KEEPALIVE
+void clearScriptFiles() {
+    if (g_app) {
+        g_app->clearScriptFiles();
+    }
+}
+
+// Multi-file support: Add a script file
+EMSCRIPTEN_KEEPALIVE
+void addScriptFile(const char* name, const char* code) {
+    if (g_app && name && code) {
+        g_app->addScriptFile(string(name), string(code));
+    }
+}
+
+// Multi-file support: Build and run all added files
+EMSCRIPTEN_KEEPALIVE
+const char* buildScriptFiles() {
+    static string errorStr;
+    if (g_app) {
+        bool success = g_app->buildScriptFiles();
+        if (!success) {
+            errorStr = g_app->getLastError();
+            return errorStr.c_str();
+        }
+    }
+    return "";
 }
 
 // Called from JavaScript to get the last error message

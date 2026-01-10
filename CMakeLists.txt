@@ -44,7 +44,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 if(EMSCRIPTEN)
     # Export functions for JS interop
     target_link_options(${PROJECT_NAME} PRIVATE
-        -sEXPORTED_FUNCTIONS=['_main','_updateScriptCode','_getScriptError']
+        -sEXPORTED_FUNCTIONS=['_main','_updateScriptCode','_getScriptError','_clearScriptFiles','_addScriptFile','_buildScriptFiles','_pauseEngine','_resumeEngine']
         -sEXPORTED_RUNTIME_METHODS=['ccall','cwrap']
     )
 endif()

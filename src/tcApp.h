@@ -24,8 +24,14 @@ public:
     void filesDropped(const vector<string>& files) override;
     void exit() override;
 
-    // Script management
+    // Script management (single-file mode)
     void loadScript(const string& code);
+
+    // Script management (multi-file mode)
+    void clearScriptFiles();
+    void addScriptFile(const string& name, const string& code);
+    bool buildScriptFiles();
+
     string getLastError() const;
 
     // Pause control (for power saving)
