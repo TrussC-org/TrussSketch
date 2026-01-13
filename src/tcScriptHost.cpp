@@ -2200,7 +2200,14 @@ tcScriptHost::~tcScriptHost() {
 }
 
 void tcScriptHost::registerTrussCFunctions() {
+    tc::logNotice() << "[AngelScript] Starting registration...";
     int r;
+    auto checkReg = [](int result, const char* desc) {
+        if (result < 0) {
+            tc::logError() << "[AngelScript] Registration failed: " << desc << " (code: " << result << ")";
+        }
+        return result;
+    };
 
     // =========================================================================
     // Value types: Vec2, Vec3, Color, Rect
@@ -2842,10 +2849,6 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterGlobalFunction("Mesh@ createSphere(float)", asFUNCTION(as_createSphere_1f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("Mesh@ createSphere(float, int)", asFUNCTION(as_createSphere_2), asCALL_GENERIC); assert(r >= 0);
 
-    // Vec2 static factory functions
-    r = engine_->RegisterGlobalFunction("Vec2 Vec2_fromAngle(float)", asFUNCTION(Vec2_FromAngle_1f), asCALL_GENERIC); assert(r >= 0);
-    r = engine_->RegisterGlobalFunction("Vec2 Vec2_fromAngle(float, float)", asFUNCTION(Vec2_FromAngle_2f), asCALL_GENERIC); assert(r >= 0);
-
     // Color static factory functions
     r = engine_->RegisterGlobalFunction("Color Color_fromHex(uint)", asFUNCTION(Color_FromHex_1u), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("Color Color_fromHex(uint, bool)", asFUNCTION(Color_FromHex_1u1b), asCALL_GENERIC); assert(r >= 0);
@@ -2949,6 +2952,8 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterObjectMethod("Tween", "bool isComplete() const", asFUNCTION(TweenFloat_IsComplete), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("Tween", "float getStart() const", asFUNCTION(TweenFloat_GetStart), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("Tween", "float getEnd() const", asFUNCTION(TweenFloat_GetEnd), asCALL_GENERIC); assert(r >= 0);
+
+    tc::logNotice() << "[AngelScript] Registration complete (" << engine_->GetGlobalFunctionCount() << " global functions, " << engine_->GetObjectTypeCount() << " object types)";
 }
 
 bool tcScriptHost::loadScript(const string& code) {
