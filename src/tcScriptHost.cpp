@@ -18,6 +18,8 @@ static vector<unique_ptr<Path>> g_paths;
 static vector<unique_ptr<StrokeMesh>> g_strokeMeshes;
 static vector<unique_ptr<Image>> g_images;
 static vector<unique_ptr<EasyCam>> g_easyCams;
+static vector<unique_ptr<FileWriter>> g_fileWriters;
+static vector<unique_ptr<FileReader>> g_fileReaders;
 
 static void clearScriptResources() {
     g_textures.clear();
@@ -32,6 +34,8 @@ static void clearScriptResources() {
     g_strokeMeshes.clear();
     g_images.clear();
     g_easyCams.clear();
+    g_fileWriters.clear();
+    g_fileReaders.clear();
 }
 
 // Font path constants for script access
@@ -88,6 +92,9 @@ static void messageCallbackStatic(const asSMessageInfo* msg, void* param) {
 #define AS_FLOAT_2F(func) \
     static void as_##func##_2f(asIScriptGeneric* gen) { gen->SetReturnFloat(func(gen->GetArgFloat(0), gen->GetArgFloat(1))); }
 
+#define AS_FLOAT_3F(func) \
+    static void as_##func##_3f(asIScriptGeneric* gen) { gen->SetReturnFloat(func(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2))); }
+
 #define AS_INT_0(func) \
     static void as_##func(asIScriptGeneric* gen) { gen->SetReturnDWord(func()); }
 
@@ -113,6 +120,8 @@ AS_VOID_3F(setColorOKLab)
 // Graphics - Shapes
 // =============================================================================
 AS_VOID_4F(drawRect)
+AS_VOID_5F(drawRectRounded)
+AS_VOID_5F(drawRectSquircle)
 AS_VOID_3F(drawCircle)
 AS_VOID_2F(drawPoint)
 AS_VOID_4F(drawEllipse)
@@ -165,6 +174,7 @@ AS_BOOL_0(isFillEnabled)
 AS_BOOL_0(isStrokeEnabled)
 AS_VOID_0(pushStyle)
 AS_VOID_0(popStyle)
+AS_VOID_0(resetStyle)
 
 static void as_getColor(asIScriptGeneric* gen) {
     Color c = getColor();
@@ -215,6 +225,7 @@ AS_INT_0(getWindowHeight)
 AS_FLOAT_0(getMouseX)
 AS_FLOAT_0(getMouseY)
 static void as_isMousePressed(asIScriptGeneric* gen) { gen->SetReturnByte(isMousePressed() ? 1 : 0); }
+static void as_isKeyPressed(asIScriptGeneric* gen) { gen->SetReturnByte(isKeyPressed(gen->GetArgDWord(0)) ? 1 : 0); }
 
 // =============================================================================
 // Time - Frame
@@ -222,6 +233,7 @@ static void as_isMousePressed(asIScriptGeneric* gen) { gen->SetReturnByte(isMous
 AS_FLOAT_0(getDeltaTime)
 AS_FLOAT_0(getFrameRate)
 static void as_getFrameCount(asIScriptGeneric* gen) { gen->SetReturnQWord(getFrameCount()); }
+AS_VOID_1F(setFps)
 
 // =============================================================================
 // Time - Elapsed
@@ -236,12 +248,126 @@ AS_VOID_0(resetElapsedTimeCounter)
 // =============================================================================
 static void as_getSystemTimeMillis(asIScriptGeneric* gen) { gen->SetReturnQWord(getSystemTimeMillis()); }
 static void as_getSystemTimeMicros(asIScriptGeneric* gen) { gen->SetReturnQWord(getSystemTimeMicros()); }
+static void as_getUnixTime(asIScriptGeneric* gen) { gen->SetReturnQWord(getUnixTime()); }
 static void as_getTimestampString_0(asIScriptGeneric* gen) {
     new(gen->GetAddressOfReturnLocation()) string(getTimestampString());
 }
 static void as_getTimestampString_1(asIScriptGeneric* gen) {
     string* fmt = static_cast<string*>(gen->GetArgObject(0));
     new(gen->GetAddressOfReturnLocation()) string(getTimestampString(*fmt));
+}
+
+// =============================================================================
+// Utility Wrappers
+// =============================================================================
+static void as_toInt(asIScriptGeneric* gen) {
+    string* str = static_cast<string*>(gen->GetArgObject(0));
+    gen->SetReturnDWord(toInt(*str));
+}
+static void as_toFloat(asIScriptGeneric* gen) {
+    string* str = static_cast<string*>(gen->GetArgObject(0));
+    gen->SetReturnFloat(toFloat(*str));
+}
+static void as_toLower(asIScriptGeneric* gen) {
+    string* str = static_cast<string*>(gen->GetArgObject(0));
+    new(gen->GetAddressOfReturnLocation()) string(toLower(*str));
+}
+static void as_toUpper(asIScriptGeneric* gen) {
+    string* str = static_cast<string*>(gen->GetArgObject(0));
+    new(gen->GetAddressOfReturnLocation()) string(toUpper(*str));
+}
+static void as_stringReplace(asIScriptGeneric* gen) {
+    string* input = static_cast<string*>(gen->GetArgObject(0));
+    string* search = static_cast<string*>(gen->GetArgObject(1));
+    string* replace = static_cast<string*>(gen->GetArgObject(2));
+    stringReplace(*input, *search, *replace);
+}
+static void as_splitString(asIScriptGeneric* gen) {
+    string* src = static_cast<string*>(gen->GetArgObject(0));
+    string* delim = static_cast<string*>(gen->GetArgObject(1));
+    vector<string> vec = splitString(*src, *delim);
+    
+    // Convert vector<string> to array<string>
+    asIScriptContext* ctx = asGetActiveContext();
+    asIScriptEngine* engine = ctx->GetEngine();
+    asITypeInfo* type = engine->GetTypeInfoByDecl("array<string>");
+    CScriptArray* arr = CScriptArray::Create(type, (asUINT)vec.size());
+    
+    for (size_t i = 0; i < vec.size(); i++) {
+        string* elem = static_cast<string*>(arr->At((asUINT)i));
+        *elem = vec[i];
+    }
+    gen->SetReturnObject(arr);
+}
+static void as_joinString(asIScriptGeneric* gen) {
+    CScriptArray* arr = static_cast<CScriptArray*>(gen->GetArgObject(0));
+    string* delim = static_cast<string*>(gen->GetArgObject(1));
+    
+    vector<string> vec;
+    vec.reserve(arr->GetSize());
+    for (asUINT i = 0; i < arr->GetSize(); i++) {
+        string* elem = static_cast<string*>(arr->At(i));
+        vec.push_back(*elem);
+    }
+    
+    new(gen->GetAddressOfReturnLocation()) string(joinString(vec, *delim));
+}
+
+// =============================================================================
+// File Wrappers
+// =============================================================================
+static void as_getDataPath(asIScriptGeneric* gen) {
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    new(gen->GetAddressOfReturnLocation()) string(getDataPath(*path));
+}
+static void as_getAbsolutePath(asIScriptGeneric* gen) {
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    new(gen->GetAddressOfReturnLocation()) string(getAbsolutePath(*path));
+}
+static void as_getFileName(asIScriptGeneric* gen) {
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    new(gen->GetAddressOfReturnLocation()) string(getFileName(*path));
+}
+static void as_getBaseName(asIScriptGeneric* gen) {
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    new(gen->GetAddressOfReturnLocation()) string(getBaseName(*path));
+}
+static void as_getFileExtension(asIScriptGeneric* gen) {
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    new(gen->GetAddressOfReturnLocation()) string(getFileExtension(*path));
+}
+static void as_getParentDirectory(asIScriptGeneric* gen) {
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    new(gen->GetAddressOfReturnLocation()) string(getParentDirectory(*path));
+}
+static void as_joinPath(asIScriptGeneric* gen) {
+    string* dir = static_cast<string*>(gen->GetArgObject(0));
+    string* file = static_cast<string*>(gen->GetArgObject(1));
+    new(gen->GetAddressOfReturnLocation()) string(joinPath(*dir, *file));
+}
+static void as_fileExists(asIScriptGeneric* gen) {
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    gen->SetReturnByte(fileExists(*path) ? 1 : 0);
+}
+static void as_directoryExists(asIScriptGeneric* gen) {
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    gen->SetReturnByte(directoryExists(*path) ? 1 : 0);
+}
+static void as_listDirectory(asIScriptGeneric* gen) {
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    vector<string> vec = listDirectory(*path);
+    
+    // Convert vector<string> to array<string>
+    asIScriptContext* ctx = asGetActiveContext();
+    asIScriptEngine* engine = ctx->GetEngine();
+    asITypeInfo* type = engine->GetTypeInfoByDecl("array<string>");
+    CScriptArray* arr = CScriptArray::Create(type, (asUINT)vec.size());
+    
+    for (size_t i = 0; i < vec.size(); i++) {
+        string* elem = static_cast<string*>(arr->At((asUINT)i));
+        *elem = vec[i];
+    }
+    gen->SetReturnObject(arr);
 }
 
 // =============================================================================
@@ -285,6 +411,9 @@ static void as_fbm_5f(asIScriptGeneric* gen) { gen->SetReturnFloat(fbm(gen->GetA
 static void as_lerp(asIScriptGeneric* gen) { gen->SetReturnFloat(tc::lerp(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2))); }
 static void as_clamp(asIScriptGeneric* gen) { gen->SetReturnFloat(clamp(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2))); }
 static void as_map(asIScriptGeneric* gen) { gen->SetReturnFloat(tc::map(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2), gen->GetArgFloat(3), gen->GetArgFloat(4))); }
+AS_FLOAT_3F(wrap)
+AS_FLOAT_2F(angleDifference)
+AS_FLOAT_2F(angleDifferenceDeg)
 
 // =============================================================================
 // Math - Trigonometry
@@ -936,6 +1065,8 @@ static void as_getTextAlignH(asIScriptGeneric* gen) {
 static void as_getTextAlignV(asIScriptGeneric* gen) {
     gen->SetReturnDWord(static_cast<int>(getTextAlignV()));
 }
+AS_VOID_1F(setBitmapLineHeight)
+AS_FLOAT_0(getBitmapLineHeight)
 static void as_getBitmapFontHeight(asIScriptGeneric* gen) {
     gen->SetReturnFloat(getBitmapFontHeight());
 }
@@ -2135,6 +2266,99 @@ static void TweenFloat_GetEnd(asIScriptGeneric* gen) {
 }
 
 // =============================================================================
+// FileWriter type for AngelScript (reference type)
+// =============================================================================
+static void FileWriter_Factory(asIScriptGeneric* gen) {
+    g_fileWriters.push_back(make_unique<FileWriter>());
+    gen->SetReturnObject(g_fileWriters.back().get());
+}
+static void FileWriter_Open_1(asIScriptGeneric* gen) {
+    FileWriter* self = static_cast<FileWriter*>(gen->GetObject());
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    gen->SetReturnByte(self->open(*path) ? 1 : 0);
+}
+static void FileWriter_Open_2(asIScriptGeneric* gen) {
+    FileWriter* self = static_cast<FileWriter*>(gen->GetObject());
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    bool append = gen->GetArgByte(1) != 0;
+    gen->SetReturnByte(self->open(*path, append) ? 1 : 0);
+}
+static void FileWriter_Close(asIScriptGeneric* gen) {
+    FileWriter* self = static_cast<FileWriter*>(gen->GetObject());
+    self->close();
+}
+static void FileWriter_IsOpen(asIScriptGeneric* gen) {
+    FileWriter* self = static_cast<FileWriter*>(gen->GetObject());
+    gen->SetReturnByte(self->isOpen() ? 1 : 0);
+}
+static void FileWriter_Write_String(asIScriptGeneric* gen) {
+    FileWriter* self = static_cast<FileWriter*>(gen->GetObject());
+    string* text = static_cast<string*>(gen->GetArgObject(0));
+    self->write(*text);
+    gen->SetReturnObject(self);
+}
+static void FileWriter_WriteLine_0(asIScriptGeneric* gen) {
+    FileWriter* self = static_cast<FileWriter*>(gen->GetObject());
+    self->writeLine();
+    gen->SetReturnObject(self);
+}
+static void FileWriter_WriteLine_1(asIScriptGeneric* gen) {
+    FileWriter* self = static_cast<FileWriter*>(gen->GetObject());
+    string* text = static_cast<string*>(gen->GetArgObject(0));
+    self->writeLine(*text);
+    gen->SetReturnObject(self);
+}
+static void FileWriter_Flush(asIScriptGeneric* gen) {
+    FileWriter* self = static_cast<FileWriter*>(gen->GetObject());
+    self->flush();
+}
+
+// =============================================================================
+// FileReader type for AngelScript (reference type)
+// =============================================================================
+static void FileReader_Factory(asIScriptGeneric* gen) {
+    g_fileReaders.push_back(make_unique<FileReader>());
+    gen->SetReturnObject(g_fileReaders.back().get());
+}
+static void FileReader_Open(asIScriptGeneric* gen) {
+    FileReader* self = static_cast<FileReader*>(gen->GetObject());
+    string* path = static_cast<string*>(gen->GetArgObject(0));
+    gen->SetReturnByte(self->open(*path) ? 1 : 0);
+}
+static void FileReader_Close(asIScriptGeneric* gen) {
+    FileReader* self = static_cast<FileReader*>(gen->GetObject());
+    self->close();
+}
+static void FileReader_IsOpen(asIScriptGeneric* gen) {
+    FileReader* self = static_cast<FileReader*>(gen->GetObject());
+    gen->SetReturnByte(self->isOpen() ? 1 : 0);
+}
+static void FileReader_Eof(asIScriptGeneric* gen) {
+    FileReader* self = static_cast<FileReader*>(gen->GetObject());
+    gen->SetReturnByte(self->eof() ? 1 : 0);
+}
+static void FileReader_ReadLine(asIScriptGeneric* gen) {
+    FileReader* self = static_cast<FileReader*>(gen->GetObject());
+    new(gen->GetAddressOfReturnLocation()) string(self->readLine());
+}
+static void FileReader_ReadChar(asIScriptGeneric* gen) {
+    FileReader* self = static_cast<FileReader*>(gen->GetObject());
+    gen->SetReturnDWord(self->readChar());
+}
+static void FileReader_Seek(asIScriptGeneric* gen) {
+    FileReader* self = static_cast<FileReader*>(gen->GetObject());
+    self->seek(gen->GetArgQWord(0));
+}
+static void FileReader_Tell(asIScriptGeneric* gen) {
+    FileReader* self = static_cast<FileReader*>(gen->GetObject());
+    gen->SetReturnQWord(self->tell());
+}
+static void FileReader_Remaining(asIScriptGeneric* gen) {
+    FileReader* self = static_cast<FileReader*>(gen->GetObject());
+    gen->SetReturnQWord(self->remaining());
+}
+
+// =============================================================================
 // Font type for AngelScript (reference type)
 // =============================================================================
 static void Font_Factory(asIScriptGeneric* gen) {
@@ -2622,6 +2846,31 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterObjectMethod("ChipSoundBundle", "ChipSoundBundle& volume(float)", asFUNCTION(ChipBundle_SetVolume), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("ChipSoundBundle", "Sound@ build()", asFUNCTION(ChipBundle_Build), asCALL_GENERIC); assert(r >= 0);
 
+    // FileWriter type (reference type)
+    r = engine_->RegisterObjectType("FileWriter", 0, asOBJ_REF | asOBJ_NOCOUNT); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("FileWriter@ createFileWriter()", asFUNCTION(FileWriter_Factory), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileWriter", "bool open(const string &in)", asFUNCTION(FileWriter_Open_1), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileWriter", "bool open(const string &in, bool)", asFUNCTION(FileWriter_Open_2), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileWriter", "void close()", asFUNCTION(FileWriter_Close), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileWriter", "bool isOpen() const", asFUNCTION(FileWriter_IsOpen), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileWriter", "FileWriter& write(const string &in)", asFUNCTION(FileWriter_Write_String), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileWriter", "FileWriter& writeLine()", asFUNCTION(FileWriter_WriteLine_0), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileWriter", "FileWriter& writeLine(const string &in)", asFUNCTION(FileWriter_WriteLine_1), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileWriter", "void flush()", asFUNCTION(FileWriter_Flush), asCALL_GENERIC); assert(r >= 0);
+
+    // FileReader type (reference type)
+    r = engine_->RegisterObjectType("FileReader", 0, asOBJ_REF | asOBJ_NOCOUNT); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("FileReader@ createFileReader()", asFUNCTION(FileReader_Factory), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileReader", "bool open(const string &in)", asFUNCTION(FileReader_Open), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileReader", "void close()", asFUNCTION(FileReader_Close), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileReader", "bool isOpen() const", asFUNCTION(FileReader_IsOpen), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileReader", "bool eof() const", asFUNCTION(FileReader_Eof), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileReader", "string readLine()", asFUNCTION(FileReader_ReadLine), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileReader", "int readChar()", asFUNCTION(FileReader_ReadChar), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileReader", "void seek(uint64)", asFUNCTION(FileReader_Seek), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileReader", "uint64 tell()", asFUNCTION(FileReader_Tell), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("FileReader", "uint64 remaining()", asFUNCTION(FileReader_Remaining), asCALL_GENERIC); assert(r >= 0);
+
     // Font methods
     r = engine_->RegisterGlobalFunction("Font@ createFont()", asFUNCTION(Font_Factory), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("Font", "bool load(const string &in, int)", asFUNCTION(Font_Load), asCALL_GENERIC); assert(r >= 0);
@@ -2636,6 +2885,34 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterGlobalProperty("const string FONT_SANS", (void*)&fontSans); assert(r >= 0);
     r = engine_->RegisterGlobalProperty("const string FONT_SERIF", (void*)&fontSerif); assert(r >= 0);
     r = engine_->RegisterGlobalProperty("const string FONT_MONO", (void*)&fontMono); assert(r >= 0);
+
+    // =========================================================================
+    // Missing Global Functions
+    // =========================================================================
+    r = engine_->RegisterGlobalFunction("int64 getUnixTime()", asFUNCTION(as_getUnixTime), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("void setFps(float)", asFUNCTION(as_setFps_1f), asCALL_GENERIC); assert(r >= 0); // Need to define as_setFps_1f wrapper
+    r = engine_->RegisterGlobalFunction("void resetStyle()", asFUNCTION(as_resetStyle), asCALL_GENERIC); assert(r >= 0); // Need to define as_resetStyle wrapper
+
+    // Utility
+    r = engine_->RegisterGlobalFunction("int toInt(const string &in)", asFUNCTION(as_toInt), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("float toFloat(const string &in)", asFUNCTION(as_toFloat), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("string toLower(const string &in)", asFUNCTION(as_toLower), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("string toUpper(const string &in)", asFUNCTION(as_toUpper), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("void stringReplace(string &out, const string &in, const string &in)", asFUNCTION(as_stringReplace), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("array<string>@ splitString(const string &in, const string &in)", asFUNCTION(as_splitString), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("string joinString(const array<string> &in, const string &in)", asFUNCTION(as_joinString), asCALL_GENERIC); assert(r >= 0);
+
+    // File
+    r = engine_->RegisterGlobalFunction("string getDataPath(const string &in)", asFUNCTION(as_getDataPath), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("string getAbsolutePath(const string &in)", asFUNCTION(as_getAbsolutePath), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("string getFileName(const string &in)", asFUNCTION(as_getFileName), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("string getBaseName(const string &in)", asFUNCTION(as_getBaseName), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("string getFileExtension(const string &in)", asFUNCTION(as_getFileExtension), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("string getParentDirectory(const string &in)", asFUNCTION(as_getParentDirectory), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("string joinPath(const string &in, const string &in)", asFUNCTION(as_joinPath), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("bool fileExists(const string &in)", asFUNCTION(as_fileExists), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("bool directoryExists(const string &in)", asFUNCTION(as_directoryExists), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("array<string>@ listDirectory(const string &in)", asFUNCTION(as_listDirectory), asCALL_GENERIC); assert(r >= 0);
 
     // =========================================================================
     // Graphics - Clear & Color
@@ -2653,6 +2930,8 @@ void tcScriptHost::registerTrussCFunctions() {
     // Graphics - Shapes
     // =========================================================================
     r = engine_->RegisterGlobalFunction("void drawRect(float, float, float, float)", asFUNCTION(as_drawRect_4f), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("void drawRectRounded(float, float, float, float, float)", asFUNCTION(as_drawRectRounded_5f), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("void drawRectSquircle(float, float, float, float, float)", asFUNCTION(as_drawRectSquircle_5f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("void drawCircle(float, float, float)", asFUNCTION(as_drawCircle_3f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("void drawPoint(float, float)", asFUNCTION(as_drawPoint_2f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("void drawEllipse(float, float, float, float)", asFUNCTION(as_drawEllipse_4f), asCALL_GENERIC); assert(r >= 0);
@@ -2731,6 +3010,7 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterGlobalFunction("float getMouseX()", asFUNCTION(as_getMouseX), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float getMouseY()", asFUNCTION(as_getMouseY), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("bool isMousePressed()", asFUNCTION(as_isMousePressed), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("bool isKeyPressed(int)", asFUNCTION(as_isKeyPressed), asCALL_GENERIC); assert(r >= 0);
 
     // =========================================================================
     // Time
@@ -2779,6 +3059,9 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterGlobalFunction("float lerp(float, float, float)", asFUNCTION(as_lerp), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float clamp(float, float, float)", asFUNCTION(as_clamp), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float map(float, float, float, float, float)", asFUNCTION(as_map), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("float wrap(float, float, float)", asFUNCTION(as_wrap_3f), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("float angleDifference(float, float)", asFUNCTION(as_angleDifference_2f), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("float angleDifferenceDeg(float, float)", asFUNCTION(as_angleDifferenceDeg_2f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float sin(float)", asFUNCTION(as_sin), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float cos(float)", asFUNCTION(as_cos), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float tan(float)", asFUNCTION(as_tan), asCALL_GENERIC); assert(r >= 0);
@@ -2834,6 +3117,8 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterGlobalFunction("void setTextAlign(Direction, Direction)", asFUNCTION(as_setTextAlign), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("Direction getTextAlignH()", asFUNCTION(as_getTextAlignH), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("Direction getTextAlignV()", asFUNCTION(as_getTextAlignV), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("void setBitmapLineHeight(float)", asFUNCTION(as_setBitmapLineHeight_1f), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("float getBitmapLineHeight()", asFUNCTION(as_getBitmapLineHeight), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float getBitmapFontHeight()", asFUNCTION(as_getBitmapFontHeight), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float getBitmapStringWidth(const string &in)", asFUNCTION(as_getBitmapStringWidth), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float getBitmapStringHeight(const string &in)", asFUNCTION(as_getBitmapStringHeight), asCALL_GENERIC); assert(r >= 0);
