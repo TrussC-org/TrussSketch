@@ -227,6 +227,12 @@ AS_FLOAT_0(getMouseY)
 static void as_isMousePressed(asIScriptGeneric* gen) { gen->SetReturnByte(isMousePressed() ? 1 : 0); }
 static void as_isKeyPressed(asIScriptGeneric* gen) { gen->SetReturnByte(isKeyPressed(gen->GetArgDWord(0)) ? 1 : 0); }
 
+// Cursor
+AS_VOID_0(showCursor)
+AS_VOID_0(hideCursor)
+static void as_setCursor(asIScriptGeneric* gen) { setCursor(static_cast<Cursor>(gen->GetArgDWord(0))); }
+static void as_getCursor(asIScriptGeneric* gen) { gen->SetReturnDWord(static_cast<int>(getCursor())); }
+
 // =============================================================================
 // Time - Frame
 // =============================================================================
@@ -3011,6 +3017,28 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterGlobalFunction("float getMouseY()", asFUNCTION(as_getMouseY), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("bool isMousePressed()", asFUNCTION(as_isMousePressed), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("bool isKeyPressed(int)", asFUNCTION(as_isKeyPressed), asCALL_GENERIC); assert(r >= 0);
+
+    // Cursor
+    r = engine_->RegisterEnum("Cursor"); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "Default", static_cast<int>(Cursor::Default)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "Arrow", static_cast<int>(Cursor::Arrow)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "IBeam", static_cast<int>(Cursor::IBeam)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "Crosshair", static_cast<int>(Cursor::Crosshair)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "Hand", static_cast<int>(Cursor::Hand)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "HResize", static_cast<int>(Cursor::HResize)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "VResize", static_cast<int>(Cursor::VResize)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "NWSEResize", static_cast<int>(Cursor::NWSEResize)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "NESWResize", static_cast<int>(Cursor::NESWResize)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "AllResize", static_cast<int>(Cursor::AllResize)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "NotAllowed", static_cast<int>(Cursor::NotAllowed)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "Custom0", static_cast<int>(Cursor::Custom0)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "Custom1", static_cast<int>(Cursor::Custom1)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "Custom2", static_cast<int>(Cursor::Custom2)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "Custom3", static_cast<int>(Cursor::Custom3)); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("void showCursor()", asFUNCTION(as_showCursor), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("void hideCursor()", asFUNCTION(as_hideCursor), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("void setCursor(Cursor)", asFUNCTION(as_setCursor), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("int getCursor()", asFUNCTION(as_getCursor), asCALL_GENERIC); assert(r >= 0);
 
     // =========================================================================
     // Time

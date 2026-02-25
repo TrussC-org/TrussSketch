@@ -154,6 +154,13 @@ Vec2 getMousePos()                       // Get mouse position as Vec2
 Vec2 getGlobalMousePos()                 // Get global mouse position as Vec2
 bool isMousePressed()                    // Is mouse button pressed
 bool isKeyPressed(int key)               // Is specific key currently pressed
+void showCursor()                        // Show the mouse cursor (default)
+void hideCursor()                        // Hide the mouse cursor
+void setCursor(Cursor cursor)            // Set the mouse cursor shape
+Cursor getCursor()                       // Get the current mouse cursor shape
+void bindCursorImage(Cursor cursor, int width, int height, const unsigned char* pixels, int hotspotX = 0, int hotspotY = 0) // Bind a custom image to a cursor slot (RGBA pixels or Image)
+void bindCursorImage(Cursor cursor, const Image& image, int hotspotX = 0, int hotspotY = 0) // Bind a custom image to a cursor slot (RGBA pixels or Image)
+void unbindCursorImage(Cursor cursor)    // Unbind a custom cursor image, restoring the system default
 ```
 
 ## Time - Frame
@@ -581,6 +588,21 @@ Wave::Sawtooth               // 3 (Sawtooth wave (bright, buzzy))
 Wave::Noise                  // 4 (White noise)
 Wave::PinkNoise              // 5 (Pink noise (1/f noise, more natural))
 Wave::Silent                 // 6 (Silent (no sound))
+Cursor::Default              // 0 (System default cursor)
+Cursor::Arrow                // 1 (Arrow cursor)
+Cursor::IBeam                // 2 (Text input cursor)
+Cursor::Crosshair            // 3 (Crosshair cursor)
+Cursor::Hand                 // 4 (Pointing hand cursor)
+Cursor::ResizeEW             // 5 (East-west resize cursor)
+Cursor::ResizeNS             // 6 (North-south resize cursor)
+Cursor::ResizeNWSE           // 7 (NW-SE diagonal resize cursor)
+Cursor::ResizeNESW           // 8 (NE-SW diagonal resize cursor)
+Cursor::ResizeAll            // 9 (Move/resize all directions cursor)
+Cursor::NotAllowed           // 10 (Not allowed cursor)
+Cursor::Custom0              // 11 (Custom cursor slot 0 (bind image first))
+Cursor::Custom1              // 12 (Custom cursor slot 1)
+Cursor::Custom2              // 13 (Custom cursor slot 2)
+Cursor::Custom3              // 14 (Custom cursor slot 3)
 ```
 
 ## Variables
