@@ -416,7 +416,7 @@ static void as_fbm_5f(asIScriptGeneric* gen) { gen->SetReturnFloat(fbm(gen->GetA
 // =============================================================================
 static void as_lerp(asIScriptGeneric* gen) { gen->SetReturnFloat(tc::lerp(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2))); }
 static void as_clamp(asIScriptGeneric* gen) { gen->SetReturnFloat(clamp(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2))); }
-static void as_map(asIScriptGeneric* gen) { gen->SetReturnFloat(tc::map(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2), gen->GetArgFloat(3), gen->GetArgFloat(4))); }
+static void as_remap(asIScriptGeneric* gen) { gen->SetReturnFloat(tc::remap(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2), gen->GetArgFloat(3), gen->GetArgFloat(4))); }
 AS_FLOAT_3F(wrap)
 AS_FLOAT_2F(angleDifference)
 AS_FLOAT_2F(angleDifferenceDeg)
@@ -3086,7 +3086,7 @@ void tcScriptHost::registerTrussCFunctions() {
     // =========================================================================
     r = engine_->RegisterGlobalFunction("float lerp(float, float, float)", asFUNCTION(as_lerp), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float clamp(float, float, float)", asFUNCTION(as_clamp), asCALL_GENERIC); assert(r >= 0);
-    r = engine_->RegisterGlobalFunction("float map(float, float, float, float, float)", asFUNCTION(as_map), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("float remap(float, float, float, float, float)", asFUNCTION(as_remap), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float wrap(float, float, float)", asFUNCTION(as_wrap_3f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float angleDifference(float, float)", asFUNCTION(as_angleDifference_2f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("float angleDifferenceDeg(float, float)", asFUNCTION(as_angleDifferenceDeg_2f), asCALL_GENERIC); assert(r >= 0);
