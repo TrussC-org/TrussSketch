@@ -49,8 +49,12 @@ void tcApp::update() {
 }
 
 void tcApp::draw() {
-    // Skip draw when paused (keep last frame visible)
-    if (paused_) return;
+    // When paused, still call clear() to ensure a render pass is started.
+    // WebGPU requires a valid command encoder per frame (sg_commit needs it).
+    if (paused_) {
+        clear(0.0f);
+        return;
+    }
 
     // Show initialization error if any
     if (!initError_.empty()) {

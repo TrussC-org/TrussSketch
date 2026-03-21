@@ -74,6 +74,13 @@ void resumeEngine() {
     }
 }
 
+// Check if the app is fully initialized
+// (WebGPU + ASYNCIFY: main() completes asynchronously after onRuntimeInitialized)
+EMSCRIPTEN_KEEPALIVE
+int isAppReady() {
+    return g_app != nullptr ? 1 : 0;
+}
+
 } // extern "C"
 #endif
 

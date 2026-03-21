@@ -3025,11 +3025,11 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterEnumValue("Cursor", "IBeam", static_cast<int>(Cursor::IBeam)); assert(r >= 0);
     r = engine_->RegisterEnumValue("Cursor", "Crosshair", static_cast<int>(Cursor::Crosshair)); assert(r >= 0);
     r = engine_->RegisterEnumValue("Cursor", "Hand", static_cast<int>(Cursor::Hand)); assert(r >= 0);
-    r = engine_->RegisterEnumValue("Cursor", "HResize", static_cast<int>(Cursor::HResize)); assert(r >= 0);
-    r = engine_->RegisterEnumValue("Cursor", "VResize", static_cast<int>(Cursor::VResize)); assert(r >= 0);
-    r = engine_->RegisterEnumValue("Cursor", "NWSEResize", static_cast<int>(Cursor::NWSEResize)); assert(r >= 0);
-    r = engine_->RegisterEnumValue("Cursor", "NESWResize", static_cast<int>(Cursor::NESWResize)); assert(r >= 0);
-    r = engine_->RegisterEnumValue("Cursor", "AllResize", static_cast<int>(Cursor::AllResize)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "ResizeEW", static_cast<int>(Cursor::ResizeEW)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "ResizeNS", static_cast<int>(Cursor::ResizeNS)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "ResizeNWSE", static_cast<int>(Cursor::ResizeNWSE)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "ResizeNESW", static_cast<int>(Cursor::ResizeNESW)); assert(r >= 0);
+    r = engine_->RegisterEnumValue("Cursor", "ResizeAll", static_cast<int>(Cursor::ResizeAll)); assert(r >= 0);
     r = engine_->RegisterEnumValue("Cursor", "NotAllowed", static_cast<int>(Cursor::NotAllowed)); assert(r >= 0);
     r = engine_->RegisterEnumValue("Cursor", "Custom0", static_cast<int>(Cursor::Custom0)); assert(r >= 0);
     r = engine_->RegisterEnumValue("Cursor", "Custom1", static_cast<int>(Cursor::Custom1)); assert(r >= 0);
