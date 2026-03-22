@@ -414,7 +414,7 @@ static void as_fbm_5f(asIScriptGeneric* gen) { gen->SetReturnFloat(fbm(gen->GetA
 // =============================================================================
 // Math - Interpolation
 // =============================================================================
-static void as_lerp(asIScriptGeneric* gen) { gen->SetReturnFloat(tc::lerp(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2))); }
+static void as_lerp(asIScriptGeneric* gen) { gen->SetReturnFloat(std::lerp(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2))); }
 static void as_clamp(asIScriptGeneric* gen) { gen->SetReturnFloat(clamp(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2))); }
 static void as_remap(asIScriptGeneric* gen) { gen->SetReturnFloat(tc::remap(gen->GetArgFloat(0), gen->GetArgFloat(1), gen->GetArgFloat(2), gen->GetArgFloat(3), gen->GetArgFloat(4))); }
 AS_FLOAT_3F(wrap)
