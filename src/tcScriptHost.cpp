@@ -2234,9 +2234,29 @@ static void TweenFloat_Finish(asIScriptGeneric* gen) {
     self->finish();
     gen->SetReturnObject(self);
 }
-static void TweenFloat_Update(asIScriptGeneric* gen) {
+static void TweenFloat_Loop(asIScriptGeneric* gen) {
     Tween<float>* self = static_cast<Tween<float>*>(gen->GetObject());
-    self->update(gen->GetArgFloat(0));
+    self->loop(gen->GetArgDWord(0));
+    gen->SetReturnObject(self);
+}
+static void TweenFloat_Loop_0(asIScriptGeneric* gen) {
+    Tween<float>* self = static_cast<Tween<float>*>(gen->GetObject());
+    self->loop();
+    gen->SetReturnObject(self);
+}
+static void TweenFloat_Yoyo(asIScriptGeneric* gen) {
+    Tween<float>* self = static_cast<Tween<float>*>(gen->GetObject());
+    self->yoyo(gen->GetArgByte(0) != 0);
+    gen->SetReturnObject(self);
+}
+static void TweenFloat_Yoyo_0(asIScriptGeneric* gen) {
+    Tween<float>* self = static_cast<Tween<float>*>(gen->GetObject());
+    self->yoyo();
+    gen->SetReturnObject(self);
+}
+static void TweenFloat_GetLoopCount(asIScriptGeneric* gen) {
+    Tween<float>* self = static_cast<Tween<float>*>(gen->GetObject());
+    gen->SetReturnDWord(self->getLoopCount());
 }
 static void TweenFloat_GetValue(asIScriptGeneric* gen) {
     Tween<float>* self = static_cast<Tween<float>*>(gen->GetObject());
@@ -3256,7 +3276,10 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterObjectMethod("Tween", "Tween@ resume()", asFUNCTION(TweenFloat_Resume), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("Tween", "Tween@ reset()", asFUNCTION(TweenFloat_Reset), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("Tween", "Tween@ finish()", asFUNCTION(TweenFloat_Finish), asCALL_GENERIC); assert(r >= 0);
-    r = engine_->RegisterObjectMethod("Tween", "void update(float)", asFUNCTION(TweenFloat_Update), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("Tween", "Tween@ loop(int)", asFUNCTION(TweenFloat_Loop), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("Tween", "Tween@ loop()", asFUNCTION(TweenFloat_Loop_0), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("Tween", "Tween@ yoyo(bool)", asFUNCTION(TweenFloat_Yoyo), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("Tween", "Tween@ yoyo()", asFUNCTION(TweenFloat_Yoyo_0), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("Tween", "float getValue() const", asFUNCTION(TweenFloat_GetValue), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("Tween", "float getProgress() const", asFUNCTION(TweenFloat_GetProgress), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("Tween", "float getElapsed() const", asFUNCTION(TweenFloat_GetElapsed), asCALL_GENERIC); assert(r >= 0);
@@ -3265,6 +3288,7 @@ void tcScriptHost::registerTrussCFunctions() {
     r = engine_->RegisterObjectMethod("Tween", "bool isComplete() const", asFUNCTION(TweenFloat_IsComplete), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("Tween", "float getStart() const", asFUNCTION(TweenFloat_GetStart), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterObjectMethod("Tween", "float getEnd() const", asFUNCTION(TweenFloat_GetEnd), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterObjectMethod("Tween", "int getLoopCount() const", asFUNCTION(TweenFloat_GetLoopCount), asCALL_GENERIC); assert(r >= 0);
 
     tc::logNotice() << "[AngelScript] Registration complete (" << engine_->GetGlobalFunctionCount() << " global functions, " << engine_->GetObjectTypeCount() << " object types)";
 }
