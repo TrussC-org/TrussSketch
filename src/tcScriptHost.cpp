@@ -107,6 +107,7 @@ static void messageCallbackStatic(const asSMessageInfo* msg, void* param) {
 // =============================================================================
 // Graphics - Clear & Color
 // =============================================================================
+AS_VOID_0(clear)
 AS_VOID_1F(clear)
 AS_VOID_3F(clear)
 AS_VOID_1F(setColor)
@@ -2943,6 +2944,7 @@ void tcScriptHost::registerTrussCFunctions() {
     // =========================================================================
     // Graphics - Clear & Color
     // =========================================================================
+    r = engine_->RegisterGlobalFunction("void clear()", asFUNCTION(as_clear_0), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("void clear(float)", asFUNCTION(as_clear_1f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("void clear(float, float, float)", asFUNCTION(as_clear_3f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("void setColor(float)", asFUNCTION(as_setColor_1f), asCALL_GENERIC); assert(r >= 0);
