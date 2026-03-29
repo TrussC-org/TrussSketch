@@ -2944,7 +2944,7 @@ void tcScriptHost::registerTrussCFunctions() {
     // =========================================================================
     // Graphics - Clear & Color
     // =========================================================================
-    r = engine_->RegisterGlobalFunction("void clear()", asFUNCTION(as_clear_0), asCALL_GENERIC); assert(r >= 0);
+    r = engine_->RegisterGlobalFunction("void clear()", asFUNCTION(as_clear), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("void clear(float)", asFUNCTION(as_clear_1f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("void clear(float, float, float)", asFUNCTION(as_clear_3f), asCALL_GENERIC); assert(r >= 0);
     r = engine_->RegisterGlobalFunction("void setColor(float)", asFUNCTION(as_setColor_1f), asCALL_GENERIC); assert(r >= 0);
