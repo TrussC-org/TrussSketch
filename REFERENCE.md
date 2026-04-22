@@ -27,8 +27,9 @@ void windowResized(int width, int height) // Window resized
 ## Graphics - Color
 
 ```cpp
-void clear(float gray)                   // Clear screen
-void clear(float r, float g, float b)    // Clear screen
+void clear()                             // Clear screen. No args = transparent black (0,0,0,0)
+void clear(float gray)                   // Clear screen. No args = transparent black (0,0,0,0)
+void clear(float r, float g, float b)    // Clear screen. No args = transparent black (0,0,0,0)
 void setColor(float gray)                // Set drawing color (0.0-1.0)
 void setColor(float r, float g, float b) // Set drawing color (0.0-1.0)
 void setColor(float r, float g, float b, float a) // Set drawing color (0.0-1.0)
@@ -174,6 +175,14 @@ double getFrameRate()                    // Current FPS
 uint64_t getFrameCount()                 // Total frames rendered
 ```
 
+## Memory
+
+```cpp
+int getSokolMemoryBytes()                // Total bytes allocated by sokol libraries
+int getSokolMemoryAllocs()               // Number of active allocations in sokol libraries
+void releaseSglBuffers()                 // Release sokol_gl vertex/command buffers (auto re-allocated on next draw)
+```
+
 ## Time - Elapsed
 
 ```cpp
@@ -229,7 +238,6 @@ float fbm(float x, float y, float z, int octaves = 4, float lacunarity = 2.0, fl
 ## Math - Interpolation
 
 ```cpp
-float lerp(float a, float b, float t)    // Linear interpolation
 float clamp(float v, float min, float max) // Clamp value to range
 float remap(float v, float inMin, float inMax, float outMin, float outMax) // Remap value from one range to another
 ```
@@ -285,6 +293,8 @@ void setWindowSize(int width, int height) // Set window size
 void toggleFullscreen()                  // Toggle fullscreen mode
 void setClipboardString(const string& text) // Copy text to clipboard
 string getClipboardString()              // Get text from clipboard
+bool isFullscreen()                      // Check if window is fullscreen
+void setFullscreen(bool fullscreen)      // Set fullscreen mode
 ```
 
 ## Utility
@@ -380,7 +390,8 @@ Tween@ pause()                           // Pause animation (chainable)
 Tween@ resume()                          // Resume animation (chainable)
 Tween@ reset()                           // Reset animation (chainable)
 Tween@ finish()                          // Jump to end (chainable)
-void update(float dt)                    // Update animation
+Tween@ loop(int count = -1)              // Set loop count (-1=infinite, 0=none, N=repeat N times)
+Tween@ yoyo(bool enable = true)          // Enable yoyo (reverse direction each loop)
 float getValue()                         // Get current tween value
 float getProgress()                      // Get progress (0-1)
 float getElapsed()                       // Get elapsed time
@@ -389,6 +400,7 @@ bool isPlaying()                         // Check if playing
 bool isComplete()                        // Check if complete
 float getStart()                         // Get start value
 float getEnd()                           // Get end value
+int getLoopCount()                       // Get number of completed loop iterations
 ```
 
 ## Types - Vec2
@@ -475,6 +487,23 @@ void setZoomSensitivity(float sensitivity) // Set zoom sensitivity
 void setPanSensitivity(float sensitivity) // Set pan sensitivity
 ```
 
+## Lighting & PBR
+
+```cpp
+void addLight(Light& light)              // Add a light to the scene
+void removeLight(Light& light)           // Remove a light from the scene
+void clearLights()                       // Remove all lights from the scene
+void setMaterial(Material& material)     // Set material for subsequent mesh draws (activates PBR)
+void clearMaterial()                     // Clear material (return to default rendering)
+void setCameraPosition(const Vec3& pos)  // Set camera position for specular calculation
+void setCameraPosition(float x, float y, float z) // Set camera position for specular calculation
+void setEnvironment(Environment& env)    // Set IBL environment for PBR ambient lighting
+void clearEnvironment()                  // Clear IBL environment
+void beginShadowPass(Light& light)       // Begin shadow depth pass from the light's point of view
+void endShadowPass()                     // End shadow depth pass
+void shadowDraw(const Mesh& mesh)        // Draw a mesh into the shadow depth pass (depth only)
+```
+
 ## Math - 3D
 
 ```cpp
@@ -524,7 +553,8 @@ int getHeight()                          // Get height
 ```cpp
 Fbo@ createFbo()                         // Create an FBO (TrussSketch factory)
 void allocate(int w, int h)              // Allocate buffer
-void begin()                             // Begin drawing to FBO
+void begin()                             // Begin drawing to FBO. No args = preserve previous content. With args = clear with specified color
+void begin(float r, float g, float b, float a = 1.0) // Begin drawing to FBO. No args = preserve previous content. With args = clear with specified color
 void end()                               // End drawing to FBO
 Texture& getTexture()                    // Get internal texture
 ```
@@ -587,6 +617,54 @@ StrokeMesh& setClosed(bool closed)       // Set whether the stroke is closed (me
 StrokeMesh& clear()                      // Clear all vertices (method chaining)
 void update()                            // Update the internal mesh (required before draw)
 void draw()                              // Draw the stroke mesh
+```
+
+## Video
+
+```cpp
+VideoPlayer@ createVideoPlayer()         // Create a video player (TrussSketch factory)
+bool load(const string& path)            // Load a video file
+void close()                             // Close the video and release resources
+bool isLoaded()                          // Check if a video is loaded
+void play()                              // Start or resume playback
+void stop()                              // Stop playback and reset to beginning
+void setPaused(bool paused)              // Pause or resume playback
+void togglePause()                       // Toggle pause state
+void update()                            // Update the video frame. Call once per frame in update()
+bool isPlaying()                         // Check if video is currently playing (not paused)
+bool isPaused()                          // Check if video is paused
+bool isFrameNew()                        // Check if a new frame is available since last update
+bool isDone()                            // Check if playback has reached the end
+float getWidth()                         // Get video width in pixels
+float getHeight()                        // Get video height in pixels
+float getDuration()                      // Get total duration in seconds
+float getPosition()                      // Get current position (0.0 to 1.0)
+void setPosition(float pct)              // Seek to position (0.0 to 1.0)
+float getCurrentTime()                   // Get current playback time in seconds
+void setCurrentTime(float seconds)       // Seek to a specific time in seconds
+void setVolume(float vol)                // Set audio volume (0.0 to 1.0)
+float getVolume()                        // Get current volume
+void setSpeed(float speed)               // Set playback speed (1.0 = normal, 2.0 = double speed)
+float getSpeed()                         // Get current playback speed
+void setPan(float pan)                   // Set stereo pan (-1.0 left, 0.0 center, 1.0 right)
+float getPan()                           // Get current stereo pan
+void setLoop(bool loop)                  // Enable/disable looping
+bool isLoop()                            // Check if looping is enabled
+int getCurrentFrame()                    // Get current frame number
+int getTotalFrames()                     // Get total number of frames
+void setFrame(int frame)                 // Seek to a specific frame number
+void nextFrame()                         // Advance to the next frame
+void previousFrame()                     // Go back to the previous frame
+void firstFrame()                        // Go to the first frame
+void setGammaCorrection(float gamma)     // Set gamma correction (1.0 = none). Use ~0.45 to brighten on platforms with dark output (e.g. macOS AVFoundation)
+float getGammaCorrection()               // Get current gamma correction value
+void setUseHwAccel(bool enable)          // Enable/disable hardware decoding. Must be called before load(). Default: true. When enabled, the player probes available HW backends (VAAPI, V4L2M2M, CUDA, etc.) and falls back to software if none are available. Currently affects the Linux backend only.
+bool getUseHwAccel()                     // Get HW accel preference (not the actual backend — use isUsingHwAccel() for that)
+bool isUsingHwAccel()                    // Check if hardware decoding is currently active (after load)
+string getHwAccelName()                  // Get the name of the active decode backend. Returns 'vaapi', 'v4l2m2m', 'cuda', 'videotoolbox', 'mediafoundation', 'software', or 'none'
+void setResyncThreshold(float seconds)   // Set the maximum video/audio drift before hard re-sync. When drift exceeds this threshold, video seeks to match audio position instead of catching up frame-by-frame. Set to 0 to disable. Default: 0.5s. Primarily affects Linux (FFmpeg) backend.
+float getResyncThreshold()               // Get the current resync threshold in seconds
+bool hasAudio()                          // Check if the loaded video has an audio track
 ```
 
 ## Constants

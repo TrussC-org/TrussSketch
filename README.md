@@ -1,38 +1,38 @@
-# tcScriptEngine
+# TrussSketch
 
-ChaiScript-based scripting engine for [TrussC](https://github.com/TrussC-org/trussc) Web Playground.
+AngelScript-based scripting engine for [TrussC](https://github.com/TrussC-org/TrussC) Web Playground.
 
 ## Overview
 
-tcScriptEngine powers [tcScript](https://trussc.org/tcscript/), a browser-based creative coding playground. Write C++-like code and see it run instantly in WebAssembly.
+TrussSketch powers [tcScript](https://trussc.org/tcscript/), a browser-based creative coding playground. Write C++-like script code and see it run instantly in WebAssembly.
 
-```javascript
-global hue = 0.0
+```cpp
+float hue = 0.0f;
 
-def setup() {
-    logNotice("Hello from tcScript!")
+void setup() {
+    logNotice("Hello from TrussSketch!");
 }
 
-def update() {
-    hue = hue + 0.005
-    if (hue > 1.0) { hue = 0.0 }
+void update() {
+    hue += 0.005f;
+    if (hue > 1.0f) hue = 0.0f;
 }
 
-def draw() {
-    clear(1.0)
+void draw() {
+    clear(1.0f);
 
-    for (var i = 0; i < 8; ++i) {
-        var angle = TAU * i / 8.0 + getElapsedTimef()
-        var x = getWindowWidth() / 2.0 + cos(angle) * 120.0
-        var y = getWindowHeight() / 2.0 + sin(angle) * 120.0
+    for (int i = 0; i < 8; i++) {
+        float angle = TAU * float(i) / 8.0f + getElapsedTimef();
+        float x = getWindowWidth() / 2.0f + cos(angle) * 120.0f;
+        float y = getWindowHeight() / 2.0f + sin(angle) * 120.0f;
 
-        setColorHSB(fmod(hue + i * 0.125, 1.0) * TAU, 0.7, 0.9)
-        drawCircle(x, y, 25.0)
+        setColorHSB(fmod(hue + float(i) * 0.125f, 1.0f), 0.7f, 0.9f);
+        drawCircle(x, y, 25.0f);
     }
 }
 
-def mousePressed(x, y, button) {
-    logNotice("Click at " + to_string(x) + ", " + to_string(y))
+void mousePressed(float x, float y, int button) {
+    logNotice("Click at " + x + ", " + y);
 }
 ```
 
@@ -48,18 +48,24 @@ def mousePressed(x, y, button) {
 ### Requirements
 
 - CMake 3.20+
-- Emscripten SDK
+- Emscripten SDK (for Web builds)
 - TrussC library
 
 ### Build for Web (WASM)
 
 ```bash
-mkdir build && cd build
-emcmake cmake .. -DTRUSSC_DIR=/path/to/trussc
+./build-web.command
+```
+
+Or manually:
+
+```bash
+mkdir build-web && cd build-web
+emcmake cmake ..
 cmake --build .
 ```
 
-Output files will be in `bin/`:
+Output files land in `bin/`:
 - `TrussSketch.js`
 - `TrussSketch.wasm`
 
@@ -76,7 +82,7 @@ wrangler r2 object put trussc-wasm/sketch/TrussSketch.js --file TrussSketch.js -
 ### Build for macOS (Development)
 
 ```bash
-mkdir build && cd build
+mkdir build-macos && cd build-macos
 cmake ..
 cmake --build .
 ```
@@ -85,30 +91,31 @@ cmake --build .
 
 See [REFERENCE.md](REFERENCE.md) for the complete API documentation.
 
-Online reference: [trussc.cc/tcscript/reference/](https://trussc.cc/tcscript/reference/)
+Online reference: [trussc.org/tcscript/reference/](https://trussc.org/tcscript/reference/)
 
 ## Architecture
 
 ```
-tcScriptEngine/
+TrussSketch/
 ├── src/
 │   ├── main.cpp           # Entry point, Emscripten exports
 │   ├── tcApp.cpp/h        # TrussC app with script lifecycle
-│   ├── tcScriptHost.cpp/h # ChaiScript wrapper with TrussC bindings
-│   └── libs/
-│       └── chaiscript/    # ChaiScript headers
+│   └── tcScriptHost.cpp/h # AngelScript wrapper with TrussC bindings
+├── testScript/            # Sample .tcs scripts used for local testing
 ├── CMakeLists.txt
 ├── REFERENCE.md           # Auto-generated API reference
 ├── ROADMAP.md             # Planned features
 └── README.md
 ```
 
+AngelScript itself is pulled in via CMake `FetchContent` (see `CMakeLists.txt`), so there is no vendored script engine in the source tree.
+
 ### API Documentation Generation
 
-`REFERENCE.md` is auto-generated from `tc_v0.0.1/docs/api-definition.yaml`:
+`REFERENCE.md` is auto-generated from `TrussC/docs/api-definition.yaml`:
 
 ```bash
-cd ../tc_v0.0.1/docs/scripts
+cd ../docs/scripts
 node generate-docs.js
 ```
 
@@ -120,7 +127,7 @@ MIT License - see TrussC for details.
 
 ## Links
 
-- [tcScript Playground](https://trussc.cc/tcscript/)
-- [tcScript API Reference](https://trussc.cc/tcscript/reference/)
+- [tcScript Playground](https://trussc.org/tcscript/)
+- [tcScript API Reference](https://trussc.org/tcscript/reference/)
 - [TrussC Framework](https://github.com/TrussC-org/TrussC)
-- [ChaiScript](https://chaiscript.com/)
+- [AngelScript](https://www.angelcode.com/angelscript/)
