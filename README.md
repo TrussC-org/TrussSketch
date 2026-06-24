@@ -89,9 +89,9 @@ cmake --build .
 
 ## API Reference
 
-See [REFERENCE.md](REFERENCE.md) for the complete API documentation.
+See the online reference: [trussc.org/tcscript/reference/](https://trussc.org/tcscript/reference/)
 
-Online reference: [trussc.org/tcscript/reference/](https://trussc.org/tcscript/reference/)
+The full TrussC C++ API reference lives at [trussc.org/reference/](https://trussc.org/reference/).
 
 ## Architecture
 
@@ -103,7 +103,6 @@ TrussSketch/
 │   └── tcScriptHost.cpp/h # AngelScript wrapper with TrussC bindings
 ├── testScript/            # Sample .tcs scripts used for local testing
 ├── CMakeLists.txt
-├── REFERENCE.md           # Auto-generated API reference
 ├── ROADMAP.md             # Planned features
 └── README.md
 ```
@@ -112,14 +111,15 @@ AngelScript itself is pulled in via CMake `FetchContent` (see `CMakeLists.txt`),
 
 ### API Documentation Generation
 
-`REFERENCE.md` is auto-generated from `TrussC/docs/api-definition.yaml`:
+The API reference is generated from `TrussC/docs/api-definition.yaml`:
 
 ```bash
 cd ../docs/scripts
 node generate-docs.js
 ```
 
-This also generates `tcscript-api.js` for the web playground's autocomplete and reference page.
+This generates `tcscript-api.js` for the web playground's autocomplete and reference page,
+and fills the auto-generated C++ API index in `TrussC/docs/FOR_AI_ASSISTANT.md`.
 
 ## License
 

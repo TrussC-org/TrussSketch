@@ -2,7 +2,7 @@
 
 ## Currently Implemented
 
-See [REFERENCE.md](REFERENCE.md) for complete API documentation.
+See the [online reference](https://trussc.org/tcscript/reference/) for complete API documentation.
 
 ### Highlights
 - Graphics: clear, setColor, setColorHSB/OKLCH/OKLab, shapes, text
