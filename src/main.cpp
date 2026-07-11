@@ -1,39 +1,31 @@
 // =============================================================================
-// main.cpp - Entry point for tcScript (TrussC Web Playground)
+// main.cpp — Entry point for the Lua TrussSketch PoC.
+// Same C-export surface as the AngelScript build, so the existing browser/editor
+// JS (Module.ccall('addScriptFile' / 'buildScriptFiles' / ...)) works unchanged.
 // =============================================================================
 
-#include "tcApp.h"
+#include "tcLuaApp.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 
 extern "C" {
 
-// Called from JavaScript to update the script code (single-file mode)
 EMSCRIPTEN_KEEPALIVE
 void updateScriptCode(const char* code) {
-    if (g_app && code) {
-        g_app->loadScript(string(code));
-    }
+    if (g_app && code) g_app->loadScript(string(code));
 }
 
-// Multi-file support: Clear all script files
 EMSCRIPTEN_KEEPALIVE
 void clearScriptFiles() {
-    if (g_app) {
-        g_app->clearScriptFiles();
-    }
+    if (g_app) g_app->clearScriptFiles();
 }
 
-// Multi-file support: Add a script file
 EMSCRIPTEN_KEEPALIVE
 void addScriptFile(const char* name, const char* code) {
-    if (g_app && name && code) {
-        g_app->addScriptFile(string(name), string(code));
-    }
+    if (g_app && name && code) g_app->addScriptFile(string(name), string(code));
 }
 
-// Multi-file support: Build and run all added files
 EMSCRIPTEN_KEEPALIVE
 const char* buildScriptFiles() {
     static string errorStr;
@@ -47,7 +39,6 @@ const char* buildScriptFiles() {
     return "";
 }
 
-// Called from JavaScript to get the last error message
 EMSCRIPTEN_KEEPALIVE
 const char* getScriptError() {
     static string errorStr;
@@ -58,24 +49,16 @@ const char* getScriptError() {
     return "";
 }
 
-// Pause the app (skip update/draw for power saving)
 EMSCRIPTEN_KEEPALIVE
 void pauseEngine() {
-    if (g_app) {
-        g_app->setPaused(true);
-    }
+    if (g_app) g_app->setPaused(true);
 }
 
-// Resume the app
 EMSCRIPTEN_KEEPALIVE
 void resumeEngine() {
-    if (g_app) {
-        g_app->setPaused(false);
-    }
+    if (g_app) g_app->setPaused(false);
 }
 
-// Check if the app is fully initialized
-// (WebGPU + ASYNCIFY: main() completes asynchronously after onRuntimeInitialized)
 EMSCRIPTEN_KEEPALIVE
 int isAppReady() {
     return g_app != nullptr ? 1 : 0;
@@ -87,7 +70,6 @@ int isAppReady() {
 int main() {
     tc::WindowSettings settings;
     settings.setSize(600, 600);
-    settings.setTitle("tcScript - TrussC Playground");
-
-    return tc::runApp<tcApp>(settings);
+    settings.setTitle("tcScript (Lua) - TrussC Playground");
+    return tc::runApp<tcLuaApp>(settings);
 }

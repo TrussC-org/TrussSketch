@@ -16,31 +16,25 @@
       "binaryDir": "${sourceDir}/build-macos",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "TRUSSC_DIR": "/Users/toru/Nextcloud/Make/TrussC/TrussC/trussc"
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "14.0",
+        "TRUSSC_DIR": "/Users/toru/Nextcloud/Make/TrussC/TrussC/core"
       },
       "displayName": "macOS",
       "generator": "Unix Makefiles",
       "name": "macos"
     },
     {
-      "binaryDir": "${sourceDir}/xcode",
-      "cacheVariables": {
-        "TRUSSC_DIR": "/Users/toru/Nextcloud/Make/TrussC/TrussC/trussc"
-      },
-      "displayName": "Xcode",
-      "generator": "Xcode",
-      "name": "xcode"
-    },
-    {
       "binaryDir": "${sourceDir}/build-web",
       "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "TRUSSC_DIR": "/Users/toru/Nextcloud/Make/TrussC/TrussC/trussc"
+        "TC_WEB_BACKEND": "WGPU",
+        "TRUSSC_DIR": "/Users/toru/Nextcloud/Make/TrussC/TrussC/core"
       },
       "displayName": "Web (Emscripten)",
       "generator": "Unix Makefiles",
       "name": "web",
-      "toolchainFile": "/opt/homebrew/Cellar/emscripten/4.0.22/libexec/cmake/Modules/Platform/Emscripten.cmake"
+      "toolchainFile": "/opt/homebrew/Cellar/emscripten/6.0.2/libexec/cmake/Modules/Platform/Emscripten.cmake"
     }
   ],
   "version": 6
