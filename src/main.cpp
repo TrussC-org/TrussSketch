@@ -49,6 +49,18 @@ const char* getScriptError() {
     return "";
 }
 
+// Last error raised inside a per-frame callback (draw/update/events).
+// The editor polls this while running; build errors go through getScriptError.
+EMSCRIPTEN_KEEPALIVE
+const char* getRuntimeError() {
+    static string errorStr;
+    if (g_app) {
+        errorStr = g_app->getRuntimeError();
+        return errorStr.c_str();
+    }
+    return "";
+}
+
 EMSCRIPTEN_KEEPALIVE
 void pauseEngine() {
     if (g_app) g_app->setPaused(true);
@@ -68,8 +80,8 @@ int isAppReady() {
 #endif
 
 int main() {
-    tc::WindowSettings settings;
+    WindowSettings settings;
     settings.setSize(600, 600);
     settings.setTitle("tcScript (Lua) - TrussC Playground");
-    return tc::runApp<tcLuaApp>(settings);
+    return TC_RUN_APP(tcLuaApp, settings);
 }

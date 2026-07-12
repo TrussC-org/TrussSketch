@@ -1,6 +1,4 @@
 #include "tcLuaApp.h"
-#include <fstream>
-#include <sstream>
 
 tcLuaApp* g_app = nullptr;
 

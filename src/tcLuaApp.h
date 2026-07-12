@@ -4,9 +4,6 @@
 // (updateScriptCode / addScriptFile / buildScriptFiles / ...) work unchanged.
 
 #include <TrussC.h>
-#include <memory>
-#include <string>
-#include <vector>
 #include "tcLuaScriptHost.h"
 
 using namespace std;
@@ -32,6 +29,7 @@ public:
     void addScriptFile(const string& name, const string& code);
     bool buildScriptFiles();
     string getLastError() const { return host_ ? host_->getLastError() : initError_; }
+    string getRuntimeError() const { return host_ ? host_->getRuntimeError() : ""; }
 
     void setPaused(bool paused) { paused_ = paused; }
     bool isPaused() const { return paused_; }
