@@ -1,139 +1,115 @@
-# tcScript Engine Roadmap
+# TrussSketch Roadmap
 
-## Currently Implemented
+*Last rewritten: 2026-07. The previous version of this file was the
+ChaiScript-era plan; its Priority 1–8 items (Vec2/Color/Path/Tween/Image/…)
+are all covered by the generated tcxLua bindings today. See [VISION.md](VISION.md)
+for the why; this file is the what/when.*
 
-See the [online reference](https://trussc.org/tcscript/reference/) for complete API documentation.
+## Done (the current baseline)
 
-### Highlights
-- Graphics: clear, setColor, setColorHSB/OKLCH/OKLab, shapes, text
-- Transform: translate, rotate, scale, pushMatrix/popMatrix
-- Time: getDeltaTime, getElapsedTimef, getFrameRate, system time, date/time
-- Math: random, noise, lerp, clamp, map, trig, geometry (dist, distSquared)
-- Input: mouse position, mouse pressed state
-- Events: mousePressed, keyPressed, windowResized, etc.
+- **Engine**: Lua 5.4 via tcxLua/sol2, WASM (emscripten, -Os, ASYNCIFY,
+  `-sGROWABLE_ARRAYBUFFERS=0`). ~13MB raw / ~2MB gzip.
+- **Bindings**: generated from `reference-data.json` — ~420 functions,
+  150+ usertypes, enums, colors, constants. Verified by `bindcheck`.
+- **Editor**: CodeMirror 6 behind a Monaco-compat shim (Chromebook-fast),
+  Lua highlighting, API completions from `trusssketch-api.js`.
+- **Safe hot reload**: candidate-state build — lint/syntax/load failure keeps
+  the previous sketch running. Auto-run on by default.
+- **Undefined-global lint**: bytecode-level static check (tcxLuaLint in the
+  TrussC repo); typo'd variables are build errors with line markers.
+- **Runtime error surfacing**: per-frame errors (draw/update/tasks) polled and
+  shown with markers + traceback, deduped.
+- **Number-drag slider**: tap a number literal → floating slider → live
+  rebuild at ~150ms throttle. Range auto-derived (0–1 floats → [0,1]/0.01).
+- **Cooperative tasks**: `spawn(fn)` / `wait(sec)` / `forever(fn)` prelude —
+  sequential time without state machines. Errors flow into the runtime-error
+  pipeline. (Names deliberately chosen to be mirrored by a future C++
+  `tc::Task` / `co_await`.)
+- **Versioned CDN + embed loader**: `cdn.trussc.org/sketch@<ver>.js` loader
+  (`TrussSketch.mount('#canvas', code)`), engine at
+  `cdn.trussc.org/<ver>/TrussSketch.{js,wasm,data}`, `@latest` alias for
+  testing only. Deploy via `tools/deploy_cdn.sh <version>|latest`.
+  Engine versions are aligned with TrussC release tags (first: 0.6.5).
 
----
+## Next up (decided, ordered)
 
-## TODO
+### 1. Measure the WASM, then split builds
+- Run `twiggy`/`bloaty` on the wasm; publish the byte breakdown.
+- Ship two blessed bundles per version: **full** (everything) and **lite**
+  (no sound/video) — no per-addon combinatorics, no dynamic linking.
+- Check/enable brotli on the CDN. Optimize *time-to-first-frame*
+  (streaming instantiation, load splash), not raw bytes.
+- Target feel: first visit 1–2s on school Wi-Fi, repeat visits 0s
+  (immutable cache). p5-sized payloads are a non-goal.
 
-### Priority 1: Class Bindings (Core Types)
+### 2. Errors as conversation
+- **Mechanical layer first**: did-you-mean on the undefined-global lint
+  (edit distance against bound globals + user locals), kid-readable JP/EN
+  messages, hide tracebacks in kid mode.
+- **`ask` button (future)**: error panel is designed as
+  `{message, location, actions[]}` so an LLM action can be added later.
+  Reuses the existing trussc-docs-ai RAG endpoint (api.trussc.org).
+  Cost controls: normalize+cache identical errors (kid errors repeat
+  heavily), per-session rate limit. No auto-fix button — a wrong fix a kid
+  can't question is worse than no fix.
 
-Add TrussC classes for richer scripting:
+### 3. Sprite layer (tables, honestly)
+- `addSprite(image)` → a Lua table wrapping a TrussC Node; per-object
+  callbacks (`function cat:clicked()`), combined with spawn/wait for
+  behavior. Teaches blueprint-vs-instance without class ceremony.
+- Design the API names together with the future C++ `tc::Task`/co_await
+  counterpart (Lua ships first; C++ is a separate TrussC-core project).
 
-```javascript
-// Vec2
-var v = Vec2(10, 20)
-v.x, v.y
-v.length()
-v.normalize()
-v.dot(other)
-v + other, v - other, v * scalar
+### 4. Sharing & remix (no accounts)
+- Phase 1 (free): `?remixOf=<id>` param on the existing URL sharing.
+- Phase 2: content-addressed storage on Workers KV — file blobs keyed by
+  hash, a project = manifest {name→hash, parent, engineVersion}; short URL =
+  manifest hash prefix (uniform length). Shared library files dedupe to one
+  blob no matter how many remixes carry them.
+- Phase 3: curated (hand-picked) gallery — no open UGC listing, no
+  moderation burden. Remix graph view (manifest parent chain) for
+  classrooms.
+- Accounts only if cross-device "my works" demand becomes real; local-first
+  until then. Anonymity is a feature for schools.
 
-// Vec3
-var v = Vec3(10, 20, 30)
-v.x, v.y, v.z
-v.cross(other)
+### 5. Version pinning UX
+- Every shared sketch/manifest records its engine version; opening loads
+  that exact version from the CDN (versions are kept forever).
+- New sketches pin the current latest *at creation time* (never "latest").
+- Remix inherits the parent's version; editor shows a "made with v0.6.5"
+  badge + one-click **upgrade to latest** (re-pin, rebuild — the lint turns
+  removed APIs into visible line errors; one-click revert).
+- Lua-side deprecation aliases mirror TrussC's `[[deprecated]]` policy so
+  most drift is soft. Before each release, sweep saved/gallery sketches
+  against the new engine (bindcheck-style) and publish a compat report.
 
-// Color
-var c = Color(1.0, 0.5, 0.2)
-var c = Color.fromHSB(hue, sat, bri)
-c.r, c.g, c.b, c.a
-```
+### 6. Embed bridge (minimal, by design)
+- JS→Lua: send named events/params; Lua→JS: one callback channel.
+  postMessage-shaped so it works identically for loader and iframe embeds.
+- No DOM manipulation from Lua. Ever.
 
-### Priority 2: Path & StrokeMesh
+## Later / parked
 
-```javascript
-// Path (Polyline)
-var path = Path()
-path.addVertex(x, y)
-path.close()
-path.draw()
+- **C++ `tc::Task`** (C++20 coroutines, `co_await tc::wait(1.0)`) in TrussC
+  core — same names as the Lua tasks; needs real design (lifetime,
+  cancellation, loop integration).
+- **Addon bundles** (e.g. Box2D as the "fun" candidate) — parked until the
+  size measurements and lite/full split land. ImGui's original motivation
+  (live number tweaking) was obsoleted by the editor's number slider.
+- **Infinite-loop watchdog** for user scripts (a non-yielding `while true`
+  still freezes the tab; `forever` has an implicit yield, raw loops don't).
+- **Pet-name aliases** for content-addressed share URLs.
+- **Paint/sound micro-editors** (Scratch-style asset creation) — only after
+  the sprite layer proves out.
+- 4 internal:: types, hybrid generation for the 13 hand-written usertypes,
+  `TC_LUA_BIND` for `Event<T>`/`ThreadChannel<T>`, bindcheck in CI
+  (tracked on the TrussC side).
 
-// StrokeMesh (variable width strokes)
-var stroke = StrokeMesh()
-stroke.setWidth(3.0)
-stroke.setCapType("round")   // "butt", "round", "square"
-stroke.setJoinType("miter")  // "miter", "round", "bevel"
-stroke.addVertex(x, y)
-stroke.draw()
-```
+## Operational notes
 
-### Priority 3: Tween (Animation)
-
-```javascript
-var tween = Tween()
-tween.setup(0.0, 100.0, 1.0, "easeOutQuad")  // from, to, duration, easing
-tween.start()
-tween.getValue()
-tween.isRunning()
-```
-
-### Priority 4: VideoGrabber (Camera)
-
-WebRTC-based camera capture (already works in TrussC WASM).
-
-```javascript
-var camera = VideoGrabber()
-camera.setup(640, 480)
-camera.draw(x, y)
-camera.draw(x, y, w, h)
-camera.getWidth()
-camera.getHeight()
-```
-
-### Priority 5: ChipSound
-
-Add procedural sound generation for 8-bit style audio.
-
-```javascript
-var sound = buildSound({
-    wave: "square",  // sin, square, triangle, sawtooth, noise
-    hz: 440.0,
-    duration: 0.3,
-    volume: 0.4,
-    attack: 0.01,
-    decay: 0.05,
-    sustain: 0.6,
-    release: 0.1
-})
-sound.play()
-sound.stop()
-```
-
-### Priority 6: VideoPlayer
-
-Web video playback support.
-
-```javascript
-var video = loadVideo("https://example.com/video.mp4")
-video.play()
-video.draw(x, y, w, h)
-video.getPosition()
-video.setPosition(0.5)
-```
-
-### Priority 7: Image/Texture
-
-```javascript
-var img = loadImage("https://example.com/image.png")
-img.draw(x, y)
-img.draw(x, y, w, h)
-img.getWidth()
-img.getHeight()
-```
-
-### Priority 8: More Graphics
-
-- `drawArc(x, y, r, startAngle, endAngle)`
-- `beginShape()` / `vertex()` / `endShape()`
-- `drawBezier(x1, y1, cx1, cy1, cx2, cy2, x2, y2)`
-- `pushStyle()`, `popStyle()`
-
----
-
-## Notes
-
-- All features should work in WASM/Web environment
-- ChaiScript requires exception handling (`-fexceptions` flag)
-- Complex types need careful memory management in ChaiScript
-- VideoGrabber uses WebRTC (requires HTTPS in production)
+- Cloudflare edge caches page JS (max-age=14400): after deploying
+  trussc.org or `@latest`, expect mixed old/new assets until TTL expiry.
+  Versioned paths are immune (immutable).
+- The sketch CDN is the `trussc-sketch-cdn` bucket ROOT (cdn.trussc.org).
+  `trussc-wasm` is the examples web player — nothing sketch-related goes
+  there.

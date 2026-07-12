@@ -1,180 +1,85 @@
+# TrussSketch Vision
 
-# Project Specification: TrussC Web Playground (tcScript)
+*Last rewritten: 2026-07 (Lua/CodeMirror era — replaces the original ChaiScript-era spec).*
 
-## Overview
-Develop a client-side web playground for the **TrussC** creative coding framework.
-Instead of server-side compilation, this project will use an embedded script engine (**ChaiScript**) running within a WebAssembly (Wasm) container. This allows users to write C++-like code in the browser, which is parsed and executed at runtime by the compiled TrussC binary.
+## One sentence
 
-## Key Goals
-1.  **Zero Server Load:** No server-side compilation. All parsing and execution happen in the client's browser via Wasm.
-2.  **Chromebook Compatible:** Must run efficiently on low-spec devices.
-3.  **Instant Feedback:** "Hot reload" experience (edit code -> immediate run).
-4.  **C++ Syntax Similarity:** The scripting language should resemble C++ as much as possible to serve as a stepping stone to native TrussC.
+**A toy that grows up**: a sketch written by a kid on a school Chromebook can be
+shared by URL, embedded in any website, and one day rebuilt as a native
+desktop app — without ever changing mental models.
 
-## Technology Stack
-* **Core:** TrussC (C++20, Sokol-based framework)
-* **Script Engine:** [ChaiScript](https://chaiscript.com/) (Header-only C++ scripting language, highly compatible with C++ syntax)
-* **Build System:** CMake + Emscripten (targeting Wasm)
-* **Frontend:** HTML5, JavaScript, Monaco Editor (for code editing)
+## The two goals
 
----
+TrussSketch is one product aimed at two gaps that no existing tool covers:
 
-## Architecture
+### 1. The escape hatch from p5.js
 
-### 1. The C++ Runtime (Wasm)
-The Wasm binary acts as the host application.
-* **Initialize:** Sets up the TrussC window and initializes the ChaiScript engine instance.
-* **Binding:** Exposes TrussC core functions (`tc::drawRect`, `tc::setColor`, etc.) to ChaiScript.
-* **Lifecycle Bridge:**
-    * `App::setup()` -> calls script `setup()`
-    * `App::update()` -> calls script `update()`
-    * `App::draw()` -> calls script `draw()`
-* **Event Bridge:**
-    * `App::mousePressed(x, y)` -> calls script `mousePressed(x, y)`
-    * Also needs: `mouseReleased`, `mouseMoved`, `keyPressed`, `keyReleased`, `windowResized`.
+p5.js owns "creative coding in the browser", but it hits walls: canvas-bound
+performance, no real 3D/shader/audio-DSP pipeline, and no path off the web.
+TrussSketch is the place p5 users land when they outgrow it:
 
-### 2. The Script Interface (tcScript)
-The user writes code that looks like this (ChaiScript syntax):
+- **Performance ceiling**: the engine is TrussC (C++/sokol) compiled to WASM —
+  100k particles, real shaders, FBOs, real-time audio.
+- **The native exit**: the same Lua sketch (and later, the same concepts in
+  C++) runs as a real app on macOS/Windows/Linux. p5 cannot leave the browser;
+  Scratch cannot grow up. TrussSketch does both.
+- **Embeddability**: one `<script>` tag + `TrussSketch.mount()` puts a sketch
+  on any page, pinned to an immutable engine version on the CDN.
 
-```cpp
-// User Code Example
-global rectX = 100.0;
-global rectY = 100.0;
+We do not fight p5's ecosystem head-on (tutorials, galleries, community take
+years). We win the users for whom p5 is no longer enough.
 
-def setup() {
-  setWindowTitle("My Script");
-  setWindowSize(800, 600);
-}
+### 2. The graduation path from Scratch
 
-def update() {
-  // Simple logic
-  rectX = rectX + 1.0;
-}
+In Japan especially there is a well-known cliff: GIGA-school Chromebooks run
+Scratch until 6th grade, and then… a black Python terminal. TrussSketch is
+positioned as **"where you go after Scratch"** — not a Scratch clone.
 
-def draw() {
-  clear(50); // Gray background
-  setColor(255, 0, 0);
-  drawRect(rectX, rectY, 50, 50);
-}
+We do NOT copy blocks. We import the three things Scratch actually got right,
+in text form:
 
-def mousePressed(x, y, button) {
-  rectX = x;
-  rectY = y;
-}
+- **No silent failure**: Scratch makes syntax errors impossible; we make
+  errors *conversational* instead — build-time undefined-variable lint with
+  line markers, did-you-mean suggestions, kid-readable messages, no raw
+  tracebacks in kid mode.
+- **Sequential time**: Scratch scripts read top-to-bottom through time
+  ("move, wait, meow"). Our `spawn` / `wait` / `forever` coroutine tasks give
+  the same power in Lua — no state machines, no `if now - t0 > 1`.
+- **Tinkerability**: safe hot reload (broken edits never kill the running
+  sketch), tap-a-number sliders for live tweaking, and eventually a remix
+  culture where every shared sketch's code is one tap away.
+
+Classes are taught honestly, not hidden: Lua tables (`Cat = {}`,
+`function Cat:update()`) are the gentlest possible introduction to
+"blueprint vs instance", and the future sprite layer builds on them.
+
+## The growth staircase
+
+The same concepts transfer at every step — that is the product:
 
 ```
-
-### 3. Frontend UI
-
-* **Editor:** Monaco Editor (VS Code style) embedded in the page.
-* **Canvas:** The WebGL canvas where Wasm renders.
-* **Controls:**
-* [Run/Restart]: Sends the string from Editor to Wasm to re-evaluate.
-* [Stop]: Pauses the Wasm loop.
-
-
-* **Storage:**
-* [Save]: Downloads the code as a `.tc` text file (or saves to localStorage).
-* [Load]: Uploads a text file to the editor.
-* *Note: No server database. All persistence is client-side.*
-
-
-
----
-
-## Implementation Details for AI Developer
-
-### Step 1: Dependencies & CMake
-
-1. Add `chaiscript` headers to the `TrussC/libs` or fetch via CMake `FetchContent`.
-2. Update `CMakeLists.txt` to include ChaiScript and link `dl` (needed for *nix/wasm).
-3. Ensure Exception Handling is enabled in Emscripten flags (`-fexceptions`).
-
-### Step 2: C++ Binding Implementation (`tcScriptHost`)
-
-Create a class `tcScriptHost` that wraps the ChaiScript instance.
-
-```cpp
-// Pseudo-code for Binding
-void bindTrussC(chaiscript::ChaiScript& chai) {
-    using namespace chaiscript;
-    using namespace tc;
-
-    // 1. Bind Basic Types
-    // (ChaiScript handles int, double, string automatically)
-    
-    // 2. Bind Core Functions
-    chai.add(fun(&tc::clear), "clear");
-    chai.add(fun(&tc::setColor), "setColor");
-    chai.add(fun(&tc::drawRect), "drawRect");
-    chai.add(fun(&tc::drawCircle), "drawCircle");
-    
-    // 3. Bind Math/Utility
-    chai.add(fun(&tc::random), "random");
-    chai.add(fun(&tc::getMouseX), "getMouseX");
-    chai.add(fun(&tc::getMouseY), "getMouseY");
-    
-    // 4. Bind Constants
-    chai.add_global_const(const_var(colors::red), "RED");
-}
-
+Scratch kid  →  TrussSketch Lua (spawn/wait, sprites, tables)
+             →  TrussC C++ (same API names, co_await tc::wait() later)
+             →  shipping native apps
 ```
 
-### Step 3: Lifecycle Management
+## Non-goals
 
-In the main `tcApp`:
+- Block-based editing (that is Scratch's identity, not ours).
+- Deep DOM integration from Lua (a minimal JS↔Lua message bridge only).
+- Matching p5's 200KB payload (physically impossible with a real engine;
+  we optimize time-to-first-frame and immutable-cache hits instead).
+- User accounts as a prerequisite for anything (anonymity is a feature for
+  schools; accounts come last, if ever).
 
-```cpp
-void tcApp::update() {
-    // Check if new code arrived from JS
-    std::string newCode = getCodeFromJS(); 
-    if (!newCode.empty()) {
-        reloadScript(newCode);
-    }
+## Principles
 
-    // Execute script update
-    try {
-        if (scriptHasUpdate) scriptUpdateFunc();
-    } catch (const std::exception& e) {
-        logErrorToConsole(e.what());
-    }
-}
-
-```
-
-### Step 4: Input Injection
-
-Map TrussC events to Script function calls.
-
-```cpp
-void tcApp::mousePressed(float x, float y, int button) {
-    try {
-        // e.g., call "mousePressed(x, y, button)" in ChaiScript
-        auto func = chai.eval<std::function<void(float,float,int)>>("mousePressed");
-        func(x, y, button);
-    } catch (...) { /* Ignore if function not defined in script */ }
-}
-
-```
-
-### Step 5: Web Integration (Emscripten)
-
-* Expose a C function `extern "C" void updateScriptCode(const char* code)` that JS can call.
-* Implement `std::cout` redirection to an HTML `div` so script `print()` or errors are visible to the user.
-
-## Limitations & Considerations
-
-* **Performance:** Script execution is slower than native C++. Avoid heavy computation in loops inside the script.
-* **Syntax:** ChaiScript is close to C++, but variables are dynamically typed (`var` or `auto`). Instruct users on these minor differences.
-
-```
-
-***
-
-### 使い方
-
-このMarkdownテキストをコピーして、コーディングを担当するAI（CursorのComposer機能や、Clineなど）に貼り付け、以下のように指示してください。
-
-> 「この要件定義書に基づいて、TrussCプロジェクトに `tcScript` 機能（Wasmでのスクリプト実行環境）を追加する実装を行ってください。まずは、ChaiScriptをCMakeに組み込み、簡単な `drawRect` がスクリプトから呼べる状態を目指してください。」
-
-```
+- **Zero server load**: everything runs client-side in WASM; sharing is
+  URL-encoded or content-addressed blobs on a KV store — no app servers.
+- **Chromebook first**: if it lags on a school Chromebook, it's broken
+  (this is why Monaco was replaced by CodeMirror 6).
+- **Immutable versions**: every published engine version lives forever at
+  `cdn.trussc.org/<version>/`; sketches pin the version they were written
+  with and never silently break.
+- **Verified, not hoped**: builds are witnessed (native + web), bindings are
+  bindcheck'd, and features ship only after live browser verification.

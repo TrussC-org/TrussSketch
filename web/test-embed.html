@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrussSketch embed loader — local test</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 24px;
+        }
+        h1 { font-size: 18px; margin: 0 0 4px; }
+        p.hint { color: #888; font-size: 13px; margin: 0 0 16px; }
+        .row { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+        canvas { background: #000; border: 1px solid #3c3c3c; }
+        #log {
+            flex: 1;
+            min-width: 280px;
+            height: 300px;
+            overflow: auto;
+            background: #111;
+            border: 1px solid #3c3c3c;
+            border-radius: 6px;
+            padding: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .log-ready { color: #89d185; }
+        .log-error { color: #f14c4c; }
+        .log-info  { color: #569cd6; }
+    </style>
+</head>
+<body>
+    <h1>TrussSketch embed loader — local test</h1>
+    <p class="hint">
+        Serve the TrussSketch repo root over HTTP (e.g. <code>python3 -m http.server</code>)
+        and open <code>/web/test-embed.html</code>. Uses the locally built engine in
+        <code>../bin/</code>.
+    </p>
+
+    <div class="row">
+        <canvas id="canvas" width="600" height="600"></canvas>
+        <div id="log"></div>
+    </div>
+
+    <!-- Loader lives next to this page (web/trussketch-loader.js). -->
+    <script src="trussketch-loader.js"></script>
+    <script>
+        var logEl = document.getElementById('log');
+        function log(msg, cls) {
+            var line = document.createElement('div');
+            line.className = 'log-' + (cls || 'info');
+            line.textContent = msg;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // A tiny sketch: clear the background and orbit a circle.
+        var lua = [
+            'local t = 0',
+            'function update()',
+            '  t = t + getDeltaTime()',
+            'end',
+            'function draw()',
+            '  clear(0.08)',
+            '  local w = getWindowWidth()',
+            '  local h = getWindowHeight()',
+            '  setColor(0.3 + 0.3 * math.sin(t), 0.6, 0.95)',
+            '  drawCircle(w / 2 + math.cos(t) * 150, h / 2 + math.sin(t * 1.3) * 120, 40)',
+            'end'
+        ].join('\n');
+
+        log('Booting engine from ../bin/ ...', 'info');
+
+        TrussSketch.mount('#canvas', lua, {
+            // Point at the locally built engine files instead of the CDN.
+            cdnBase: '../bin/',
+            onReady: function () {
+                log('Engine ready — sketch running.', 'ready');
+            },
+            onError: function (msg) {
+                log('Error: ' + msg, 'error');
+            }
+        }).then(function (sketch) {
+            log('mount() resolved. controller = { run, pause, resume, getError }', 'info');
+            // Sanity: surface any immediate build error.
+            var err = sketch.getError();
+            if (err) log('Initial error: ' + err, 'error');
+        }).catch(function (e) {
+            log('mount() rejected: ' + (e && e.message ? e.message : e), 'error');
+        });
+    </script>
+</body>
+</html>

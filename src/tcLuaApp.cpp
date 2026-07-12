@@ -21,8 +21,16 @@ void tcLuaApp::loadDefaultSketch() {
 }
 
 void tcLuaApp::update() {
+    // Frame boundary: the previous frame (including any ASYNCIFY-suspended
+    // draw on a replaced state) has fully completed — safe to destroy
+    // states retired by buildScriptFiles().
+    if (host_) host_->collectRetired();
     if (paused_) return;
-    if (scriptLoaded_) host_->callUpdate();
+    if (scriptLoaded_) {
+        // Advance cooperative tasks (spawn/wait/forever) before user update().
+        host_->callTick(getElapsedTime());
+        host_->callUpdate();
+    }
 }
 
 void tcLuaApp::draw() {
