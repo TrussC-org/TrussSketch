@@ -42,16 +42,25 @@ STAMPED="$(mktemp)"
 trap 'rm -f "$STAMPED"' EXIT
 sed "s/__TRUSSKETCH_VERSION__/${VERSION}/g" "$LOADER" > "$STAMPED"
 
+# --- cache policy -------------------------------------------------------------
+# Pinned releases never change once uploaded -> browsers may cache them forever.
+# 'latest' is a mutable alias -> keep its TTL short so updates propagate.
+if [[ "$VERSION" == "latest" ]]; then
+    CACHE="public, max-age=300"
+else
+    CACHE="public, max-age=31536000, immutable"
+fi
+
 echo "Deploying TrussSketch '$VERSION' to R2 bucket '$BUCKET'..."
 echo
 
 # --- engine artifacts --------------------------------------------------------
-wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.js"   --file "$BIN_DIR/TrussSketch.js"   --remote
-wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.wasm" --file "$BIN_DIR/TrussSketch.wasm" --remote
-wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.data" --file "$BIN_DIR/TrussSketch.data" --remote
+wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.js"   --file "$BIN_DIR/TrussSketch.js"   --cache-control "$CACHE" --remote
+wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.wasm" --file "$BIN_DIR/TrussSketch.wasm" --cache-control "$CACHE" --remote
+wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.data" --file "$BIN_DIR/TrussSketch.data" --cache-control "$CACHE" --remote
 
 # --- version-stamped embed loader --------------------------------------------
-wrangler r2 object put "$BUCKET/sketch@${VERSION}.js"        --file "$STAMPED"                  --remote
+wrangler r2 object put "$BUCKET/sketch@${VERSION}.js"        --file "$STAMPED"                  --cache-control "$CACHE" --remote
 
 echo
 echo "Done. Uploaded:"
