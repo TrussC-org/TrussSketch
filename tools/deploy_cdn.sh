@@ -55,12 +55,14 @@ echo "Deploying TrussSketch '$VERSION' to R2 bucket '$BUCKET'..."
 echo
 
 # --- engine artifacts --------------------------------------------------------
-wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.js"   --file "$BIN_DIR/TrussSketch.js"   --cache-control "$CACHE" --remote
-wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.wasm" --file "$BIN_DIR/TrussSketch.wasm" --cache-control "$CACHE" --remote
-wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.data" --file "$BIN_DIR/TrussSketch.data" --cache-control "$CACHE" --remote
+# Explicit content-types: Cloudflare only brotli-compresses known compressible
+# types, and wrangler's sniffing gets these wrong (.js missing, .data as png).
+wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.js"   --file "$BIN_DIR/TrussSketch.js"   --content-type "application/javascript"  --cache-control "$CACHE" --remote
+wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.wasm" --file "$BIN_DIR/TrussSketch.wasm" --content-type "application/wasm"         --cache-control "$CACHE" --remote
+wrangler r2 object put "$BUCKET/${VERSION}/TrussSketch.data" --file "$BIN_DIR/TrussSketch.data" --content-type "application/octet-stream" --cache-control "$CACHE" --remote
 
 # --- version-stamped embed loader --------------------------------------------
-wrangler r2 object put "$BUCKET/sketch@${VERSION}.js"        --file "$STAMPED"                  --cache-control "$CACHE" --remote
+wrangler r2 object put "$BUCKET/sketch@${VERSION}.js"        --file "$STAMPED"                  --content-type "application/javascript"  --cache-control "$CACHE" --remote
 
 echo
 echo "Done. Uploaded:"
